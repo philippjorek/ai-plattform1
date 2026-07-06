@@ -1,0 +1,136 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-glow: var(--glow);
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+:root {
+  --radius: 0.5rem;
+  /* Midnight Indigo palette */
+  --background: oklch(0.12 0.04 270);
+  --foreground: oklch(0.98 0.01 250);
+  --card: oklch(0.18 0.05 270);
+  --card-foreground: oklch(0.98 0.01 250);
+  --popover: oklch(0.18 0.05 270);
+  --popover-foreground: oklch(0.98 0.01 250);
+  --primary: oklch(0.62 0.22 275);
+  --primary-foreground: oklch(0.98 0.01 250);
+  --secondary: oklch(0.25 0.07 270);
+  --secondary-foreground: oklch(0.98 0.01 250);
+  --muted: oklch(0.22 0.05 270);
+  --muted-foreground: oklch(0.7 0.04 260);
+  --accent: oklch(0.7 0.2 270);
+  --accent-foreground: oklch(0.12 0.04 270);
+  --destructive: oklch(0.62 0.25 27);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.62 0.22 275);
+  --glow: oklch(0.62 0.22 275 / 0.55);
+
+  --gradient-hero: radial-gradient(ellipse at top, oklch(0.3 0.15 275 / 0.6), transparent 60%),
+    linear-gradient(180deg, oklch(0.08 0.04 270), oklch(0.12 0.05 270));
+  --gradient-accent: linear-gradient(135deg, oklch(0.62 0.22 275), oklch(0.7 0.2 240));
+  --shadow-glow: 0 0 60px -10px var(--glow);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+@utility text-gradient {
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility glass {
+  background: oklch(0.18 0.05 270 / 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid oklch(1 0 0 / 0.08);
+}
+
+@utility glow-ring {
+  box-shadow: var(--shadow-glow);
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+@keyframes grid-move {
+  0% { background-position: 0 0; }
+  100% { background-position: 60px 60px; }
+}
+
+@utility animate-float { animation: float 6s ease-in-out infinite; }
+@utility animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+/* Scroll reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 1s cubic-bezier(.2,.7,.2,1), transform 1s cubic-bezier(.2,.7,.2,1);
+}
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Grid bg */
+.grid-bg {
+  background-image:
+    linear-gradient(oklch(1 0 0 / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(1 0 0 / 0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: grid-move 20s linear infinite;
+}
