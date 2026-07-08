@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import heroImage from "@/assets/hero-projects.jpg";
+import heroImage from "../assets/hero-projects.jpg";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ParallaxHero } from "@/components/ParallaxHero";
