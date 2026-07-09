@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import heroImage from "@/assets/hero-contact.jpg";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -33,6 +33,9 @@ const channels = [
 
 function ContactPage() {
   const [sent, setSent] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -46,6 +49,28 @@ function ContactPage() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSending(true);
+    setError(false);
+
+    try {
+      const res = await fetch("/api/formular", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!res.ok) throw new Error("submission failed");
+      const data: { ok: boolean; saved?: boolean } = await res.json();
+      setSent(true);
+      setSaved(Boolean(data.saved));
+    } catch {
+      setError(true);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -67,10 +92,7 @@ function ContactPage() {
         <div className="mx-auto max-w-5xl grid md:grid-cols-[1fr_320px] gap-12">
           <Reveal>
             <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setSent(true);
-              }}
+              onSubmit={handleSubmit}
               className="glass rounded-2xl p-8 md:p-10 space-y-6"
             >
               <div className="grid md:grid-cols-2 gap-6">
@@ -112,13 +134,31 @@ function ContactPage() {
                 />
               </div>
 
+              {sent && (
+                <p className="text-sm text-primary">
+                  Nachricht gesendet.
+                  {saved && " Ich melde mich innerhalb von 24 Stunden."}
+                </p>
+              )}
+
+              {error && (
+                <p className="text-sm text-destructive">
+                  Fehler. Bitte versuch es später erneut oder
+                  schreib mir direkt per Email.
+                </p>
+              )}
+
               <button
                 type="submit"
-                className="group relative w-full md:w-auto px-10 py-4 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-medium overflow-hidden glow-ring"
-                disabled={sent}
+                className="group relative w-full md:w-auto px-10 py-4 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-medium overflow-hidden glow-ring disabled:opacity-70"
+                disabled={sending || sent}
               >
                 <span className="relative z-10">
-                  {sent ? "✓ Gesendet — danke!" : "Nachricht senden"}
+                  {sent
+                    ? "✓ Gesendet — danke!"
+                    : sending
+                      ? "Wird gesendet…"
+                      : "Nachricht senden"}
                 </span>
               </button>
             </form>

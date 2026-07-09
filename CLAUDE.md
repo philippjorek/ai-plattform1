@@ -8,10 +8,10 @@ A German-language portfolio/marketing site ("Service-mit-Herz") for an AI archit
 
 ## Commands
 
-- `npm run dev` — start dev server (Vite, fixed port 8081, host `0.0.0.0`)
+- `npm run dev` — start dev server (Vite, fixed port 8082, host `0.0.0.0`)
 - `npm run build` — production build
 - `npm run build:dev` — development-mode build
-- `npm run preview` — preview the production build (port 8081)
+- `npm run preview` — preview the production build (port 8082)
 - `npm run lint` — ESLint over the whole repo
 - `npm run format` — Prettier write over the whole repo
 
@@ -20,6 +20,10 @@ There is no test script/framework configured in this repo. There is no `--fix` l
 `bunfig.toml` configures bun's install behavior (24h supply-chain age guard on new package versions) in case bun is ever used instead of npm; `package-lock.json` is the lockfile actually kept in sync with the npm scripts.
 
 ## Architecture
+
+- framework: react
+- running inside of docker container
+- port 8082
 
 ### Routing
 

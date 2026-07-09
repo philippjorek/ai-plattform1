@@ -9,23 +9,13 @@ import tailwindcss from "@tailwindcss/vite";
 //import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 import path from "node:path";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { z } from "zod";
-
-const formularSubmissionSchema = z.object({
-  name: z.string().min(1),
-  telefon: z.string().min(1),
-  email: z.string().email(),
-  message: z.string().min(1),
-});
+import { saveFormularSubmission } from "./src/lib/formular-store";
 
 // Dev/preview-only API: persists Formular submissions to data/formular-submissions.json.
 // There is no production server wired up yet (nitro/Start plugin above are disabled),
-// so this only runs under `vite dev` / `vite preview`.
+// so this only runs under `vite dev` / `vite preview`. For a production-capable
+// equivalent that runs without Vite, see server/formular-server.mjs.
 function formularApiPlugin(): Plugin {
-  const dataDir = path.resolve(process.cwd(), "data");
-  const dataFile = path.join(dataDir, "formular-submissions.json");
-
   const handler = async (
     req: import("node:http").IncomingMessage,
     res: import("node:http").ServerResponse,
@@ -39,25 +29,15 @@ function formularApiPlugin(): Plugin {
       const chunks: Buffer[] = [];
       for await (const chunk of req) chunks.push(chunk as Buffer);
       const body = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
-      const data = formularSubmissionSchema.parse(body);
-
-      await mkdir(dataDir, { recursive: true });
-      let submissions: Array<Record<string, string>> = [];
-      try {
-        submissions = JSON.parse(await readFile(dataFile, "utf-8"));
-      } catch {
-        submissions = [];
-      }
-      submissions.push({ ...data, submittedAt: new Date().toISOString() });
-      await writeFile(dataFile, JSON.stringify(submissions, null, 2), "utf-8");
+      await saveFormularSubmission(body);
 
       res.statusCode = 200;
       res.setHeader("content-type", "application/json");
-      res.end(JSON.stringify({ ok: true }));
+      res.end(JSON.stringify({ ok: true, saved: true }));
     } catch {
       res.statusCode = 400;
       res.setHeader("content-type", "application/json");
-      res.end(JSON.stringify({ ok: false }));
+      res.end(JSON.stringify({ ok: false, saved: false }));
     }
   };
 
@@ -129,7 +109,13 @@ export default defineConfig({
 
     server: {
       host: "0.0.0.0",
-      port: 8081,
+      port: 8082,
+      watch: {
+        // Formular submissions are written to data/formular-submissions.json at
+        // runtime; without this, every submit is seen as a source change and
+        // Vite force-reloads the page mid-request, aborting the fetch.
+        ignored: ["**/data/**"],
+      },
     },
 
     resolve: {
