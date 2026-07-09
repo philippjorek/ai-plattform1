@@ -18,7 +18,8 @@ declare global {
   }
 }
 
-export function reportLovableError(error: unknown, context: Record<string, unknown> = {}) {
+export function reportLovableError(error: unknown, context: Record<string, unknown> = {})
+ {
   if (typeof window === "undefined") return;
   window.__lovableEvents?.captureException?.(
     error,

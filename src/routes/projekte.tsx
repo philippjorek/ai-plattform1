@@ -8,51 +8,45 @@ import { Reveal } from "@/components/Reveal";
 export const Route = createFileRoute("/projekte")({
   head: () => ({
     meta: [
-      { title: "Projekte — Service-mit-Herz" },
-      { name: "description", content: "Eine Auswahl von KI- und Software-Projekten — RAG, Agenten, Realtime und mehr." },
-      { property: "og:title", content: "Projekte — Service-mit-Herz" },
+      { title: "Agentic AI Projekte" },
+      { name: "description", content: "Eine Auswahl von KI und Software Projekten RAG, Agenten, Realtime und mehr." },
+      { property: "og:title", content: "AI Projekte" },
       { property: "og:description", content: "AI-Projekte mit echtem Impact." },
     ],
   }),
   component: ProjectsPage,
 });
 
+
 const projects = [
   {
     year: "2026",
-    title: "Atlas — Retrieval Engine",
-    category: "RAG · Vector Search",
-    desc: "Hybride Retrieval-Pipeline über 12M Dokumente. Reranking, Caching und sub-200ms Latenz.",
+    title: "Workflow-Automatisierung",
+    category: "RAG Excel SQL Orchestration",
+    desc: "AI Agent nutzt Knowledgebase um Excel-Daten in eine SQL-Datenbank zu schreiben und reduziert Redaktions-Arbeit damit um 80.",
   },
+
+  {
+    year: "2026",
+    title: "Claude Code -  Software-Migration",
+    category: "Softwareentwicklung LLM Architektur",
+    desc: "Migration eines Software-Projekts des CMS Drupal in PHP und SQL mit JSON APIs auf die neuste Version.",
+  },
+
+
+  {
+    year: "2026",
+    title: "Local LLM  - Chat-Bot",
+    category: "Docker LLM Generative AI",
+    desc: "Interne Entwicklung eines localen Chat-Bots und eigener Knowledgebase mit lokalem Docker und Open-WebUI.",
+  },
+
+
   {
     year: "2025",
-    title: "Orion — Agent Runtime",
-    category: "Multi-Agent · Orchestration",
-    desc: "Tool-using Agenten mit Memory und Reflection. Production-ready Workflows für Knowledge-Workers.",
-  },
-  {
-    year: "2025",
-    title: "Pulse — Realtime Insights",
-    category: "Streaming · ML",
-    desc: "Event-getriebene Analyse-Plattform. Anomalie-Detection in Echtzeit, deployed am Edge.",
-  },
-  {
-    year: "2024",
-    title: "Helix — Fine-Tuning Studio",
-    category: "MLOps · Training",
-    desc: "End-to-End Pipeline für Domain-spezifisches Fine-Tuning. Versioning, Evaluation, Rollouts.",
-  },
-  {
-    year: "2024",
-    title: "Nova — Conversational UI",
-    category: "LLM · UX",
-    desc: "Streaming-Chat mit strukturierten Outputs. Generative UI-Komponenten direkt aus Model-Calls.",
-  },
-  {
-    year: "2023",
-    title: "Vertex — Vision Pipeline",
-    category: "Computer Vision",
-    desc: "Custom YOLO-Modelle für industrielle Qualitätskontrolle. 99.4% Precision, 60fps am Edge.",
+    title: "OpenAI - Custom Agent",
+    category: "LLM Open Source",
+    desc: "Entwicklung und Veroffentlichung des Open Source Projekts AImulator.com zur KI gestutzten  Content-Generierung.",
   },
 ];
 

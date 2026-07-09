@@ -22,19 +22,19 @@ const layers = [
     n: "01",
     title: "Foundation Layer",
     desc: "Vector Stores, Embedding-Pipelines und Daten-Infrastruktur — das Fundament jedes intelligenten Systems.",
-    tech: ["Postgres + pgvector", "Qdrant", "Apache Kafka"],
+    tech: ["SQL", "Qdrant", "Apache/Ubuntu", "Python"],
   },
   {
     n: "02",
     title: "Model Layer",
     desc: "LLMs, Fine-Tuned Modelle und spezialisierte Klassifikatoren — orchestriert und versioniert.",
-    tech: ["OpenAI / Anthropic", "Llama 3", "HuggingFace"],
+    tech: ["OpenAI", "Ollama", "Anthropic / Claude"],
   },
   {
     n: "03",
     title: "Orchestration Layer",
     desc: "Agenten, Tool-Calling und Routing-Logik — der Dirigent zwischen Mensch, Daten und Modellen.",
-    tech: ["LangGraph", "LlamaIndex", "Custom Runtime"],
+    tech: ["LangGraph", "Open-Webui", "n8n", "make"],
   },
   {
     n: "04",

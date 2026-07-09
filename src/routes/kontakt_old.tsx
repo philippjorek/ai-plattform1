@@ -6,7 +6,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { ParallaxHero } from "@/components/ParallaxHero";
 import { Reveal } from "@/components/Reveal";
 
-export const Route = createFileRoute("/kontakt")({
+export const Route = createFileRoute("/kontakt_old")({
   head: () => ({
     meta: [
       { title: "Kontakt — zu Philipp" },

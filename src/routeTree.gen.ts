@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TestRouteImport } from './routes/test'
 import { Route as ProjekteRouteImport } from './routes/projekte'
+import { Route as Kontakt_oldRouteImport } from './routes/kontakt_old'
 import { Route as KontaktRouteImport } from './routes/kontakt'
 import { Route as Ind2RouteImport } from './routes/ind2'
 import { Route as ArchitectureRouteImport } from './routes/architecture'
@@ -24,6 +25,11 @@ const TestRoute = TestRouteImport.update({
 const ProjekteRoute = ProjekteRouteImport.update({
   id: '/projekte',
   path: '/projekte',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Kontakt_oldRoute = Kontakt_oldRouteImport.update({
+  id: '/kontakt_old',
+  path: '/kontakt_old',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KontaktRoute = KontaktRouteImport.update({
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/architecture': typeof ArchitectureRoute
   '/ind2': typeof Ind2Route
   '/kontakt': typeof KontaktRoute
+  '/kontakt_old': typeof Kontakt_oldRoute
   '/projekte': typeof ProjekteRoute
   '/test': typeof TestRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/architecture': typeof ArchitectureRoute
   '/ind2': typeof Ind2Route
   '/kontakt': typeof KontaktRoute
+  '/kontakt_old': typeof Kontakt_oldRoute
   '/projekte': typeof ProjekteRoute
   '/test': typeof TestRoute
 }
@@ -69,21 +77,36 @@ export interface FileRoutesById {
   '/architecture': typeof ArchitectureRoute
   '/ind2': typeof Ind2Route
   '/kontakt': typeof KontaktRoute
+  '/kontakt_old': typeof Kontakt_oldRoute
   '/projekte': typeof ProjekteRoute
   '/test': typeof TestRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/architecture' | '/ind2' | '/kontakt' | '/projekte' | '/test'
+    | '/'
+    | '/architecture'
+    | '/ind2'
+    | '/kontakt'
+    | '/kontakt_old'
+    | '/projekte'
+    | '/test'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/architecture' | '/ind2' | '/kontakt' | '/projekte' | '/test'
+  to:
+    | '/'
+    | '/architecture'
+    | '/ind2'
+    | '/kontakt'
+    | '/kontakt_old'
+    | '/projekte'
+    | '/test'
   id:
     | '__root__'
     | '/'
     | '/architecture'
     | '/ind2'
     | '/kontakt'
+    | '/kontakt_old'
     | '/projekte'
     | '/test'
   fileRoutesById: FileRoutesById
@@ -93,6 +116,7 @@ export interface RootRouteChildren {
   ArchitectureRoute: typeof ArchitectureRoute
   Ind2Route: typeof Ind2Route
   KontaktRoute: typeof KontaktRoute
+  Kontakt_oldRoute: typeof Kontakt_oldRoute
   ProjekteRoute: typeof ProjekteRoute
   TestRoute: typeof TestRoute
 }
@@ -111,6 +135,13 @@ declare module '@tanstack/react-router' {
       path: '/projekte'
       fullPath: '/projekte'
       preLoaderRoute: typeof ProjekteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kontakt_old': {
+      id: '/kontakt_old'
+      path: '/kontakt_old'
+      fullPath: '/kontakt_old'
+      preLoaderRoute: typeof Kontakt_oldRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kontakt': {
@@ -149,6 +180,7 @@ const rootRouteChildren: RootRouteChildren = {
   ArchitectureRoute: ArchitectureRoute,
   Ind2Route: Ind2Route,
   KontaktRoute: KontaktRoute,
+  Kontakt_oldRoute: Kontakt_oldRoute,
   ProjekteRoute: ProjekteRoute,
   TestRoute: TestRoute,
 }

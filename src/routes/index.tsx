@@ -8,34 +8,34 @@ import { Reveal } from "@/components/Reveal";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Service-mit-Herz — AI Architecture & Engineering" },
-      { name: "description", content: "Futuristische KI-Lösungen, durchdachte Architektur, echtes Engineering. Portfolio eines AI Engineers." },
-      { property: "og:title", content: "Service-mit-Herz — AI Architecture" },
-      { property: "og:description", content: "Futuristische KI-Lösungen mit Substanz." },
+      { title: "Agentic &amp; Generative AI Engineering - by Philipp Jorek" },
+      { name: "description", content: "Ai Solutions for IT-Projects from Kassel to the world." },
+      { property: "og:title", content: "AI Architecture" },
+      { property: "og:description", content: "AI Software-Architecture und Development." },
     ],
   }),
   component: HomePage,
 });
 
 const stats = [
-  { value: "8+", label: "Jahre Engineering" },
-  { value: "40+", label: "AI Projekte" },
-  { value: "12", label: "Production Modelle" },
+  { value: "16+", label: "Jahre Development" },
+  { value: "40+", label: "IT-Projekte" },
+  { value: "12+", label: "Agents" },
   { value: "∞", label: "Lernkurve" },
 ];
 
 const capabilities = [
   {
     title: "LLM Architektur",
-    desc: "Retrieval-Augmented Generation, Agenten-Frameworks und Fine-Tuning für produktionsreife Sprachmodelle.",
+    desc: "Retrieval-Augmented Generation (RAG), Agenten-Frameworks und Fine-Tuning fuer produktionsreife Modelle.",
   },
   {
-    title: "ML Engineering",
-    desc: "End-to-End Pipelines, MLOps, Vector Databases und skalierbare Inference-Infrastruktur.",
+    title: "Automatisierung",
+    desc: "End-to-End Pipelines, Vector Databases und skalierbare Inference-Infrastruktur.",
   },
   {
     title: "Software Architektur",
-    desc: "Saubere, evolutionäre Systeme. Event-driven, type-safe, und gebaut für lange Lebenszyklen.",
+    desc: "Saubere, evolutionäre Systeme mit KI API's, Cloud-Servern und  fuer lange Lebenszyklen.",
   },
 ];
 
@@ -51,10 +51,10 @@ function HomePage() {
           <>
             KI mit <span className="text-gradient">Architektur</span>.
             <br />
-            Engineering mit <span className="text-gradient">Herz</span>.
+            Softwareentwicklung mit <span className="text-gradient">Herz</span>.
           </>
         }
-        subtitle="Ich entwerfe und baue intelligente Systeme — von der ersten Idee bis zum Production-Deployment."
+        subtitle="Ich konstruiere intelligente Agentic u Generative AI Systeme . von der ersten Idee bis zum Production-Deployment."
       />
 
       {/* Stats */}
