@@ -11,8 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TestRouteImport } from './routes/test'
 import { Route as ProjekteRouteImport } from './routes/projekte'
+import { Route as Kontakt_oldRouteImport } from './routes/kontakt_old'
 import { Route as KontaktRouteImport } from './routes/kontakt'
 import { Route as Ind2RouteImport } from './routes/ind2'
+import { Route as FormularRouteImport } from './routes/formular'
 import { Route as ArchitectureRouteImport } from './routes/architecture'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -26,6 +28,11 @@ const ProjekteRoute = ProjekteRouteImport.update({
   path: '/projekte',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Kontakt_oldRoute = Kontakt_oldRouteImport.update({
+  id: '/kontakt_old',
+  path: '/kontakt_old',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const KontaktRoute = KontaktRouteImport.update({
   id: '/kontakt',
   path: '/kontakt',
@@ -34,6 +41,11 @@ const KontaktRoute = KontaktRouteImport.update({
 const Ind2Route = Ind2RouteImport.update({
   id: '/ind2',
   path: '/ind2',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FormularRoute = FormularRouteImport.update({
+  id: '/formular',
+  path: '/formular',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ArchitectureRoute = ArchitectureRouteImport.update({
@@ -50,16 +62,20 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/architecture': typeof ArchitectureRoute
+  '/formular': typeof FormularRoute
   '/ind2': typeof Ind2Route
   '/kontakt': typeof KontaktRoute
+  '/kontakt_old': typeof Kontakt_oldRoute
   '/projekte': typeof ProjekteRoute
   '/test': typeof TestRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/architecture': typeof ArchitectureRoute
+  '/formular': typeof FormularRoute
   '/ind2': typeof Ind2Route
   '/kontakt': typeof KontaktRoute
+  '/kontakt_old': typeof Kontakt_oldRoute
   '/projekte': typeof ProjekteRoute
   '/test': typeof TestRoute
 }
@@ -67,23 +83,42 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/architecture': typeof ArchitectureRoute
+  '/formular': typeof FormularRoute
   '/ind2': typeof Ind2Route
   '/kontakt': typeof KontaktRoute
+  '/kontakt_old': typeof Kontakt_oldRoute
   '/projekte': typeof ProjekteRoute
   '/test': typeof TestRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/architecture' | '/ind2' | '/kontakt' | '/projekte' | '/test'
+    | '/'
+    | '/architecture'
+    | '/formular'
+    | '/ind2'
+    | '/kontakt'
+    | '/kontakt_old'
+    | '/projekte'
+    | '/test'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/architecture' | '/ind2' | '/kontakt' | '/projekte' | '/test'
+  to:
+    | '/'
+    | '/architecture'
+    | '/formular'
+    | '/ind2'
+    | '/kontakt'
+    | '/kontakt_old'
+    | '/projekte'
+    | '/test'
   id:
     | '__root__'
     | '/'
     | '/architecture'
+    | '/formular'
     | '/ind2'
     | '/kontakt'
+    | '/kontakt_old'
     | '/projekte'
     | '/test'
   fileRoutesById: FileRoutesById
@@ -91,8 +126,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ArchitectureRoute: typeof ArchitectureRoute
+  FormularRoute: typeof FormularRoute
   Ind2Route: typeof Ind2Route
   KontaktRoute: typeof KontaktRoute
+  Kontakt_oldRoute: typeof Kontakt_oldRoute
   ProjekteRoute: typeof ProjekteRoute
   TestRoute: typeof TestRoute
 }
@@ -113,6 +150,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjekteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/kontakt_old': {
+      id: '/kontakt_old'
+      path: '/kontakt_old'
+      fullPath: '/kontakt_old'
+      preLoaderRoute: typeof Kontakt_oldRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/kontakt': {
       id: '/kontakt'
       path: '/kontakt'
@@ -125,6 +169,13 @@ declare module '@tanstack/react-router' {
       path: '/ind2'
       fullPath: '/ind2'
       preLoaderRoute: typeof Ind2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/formular': {
+      id: '/formular'
+      path: '/formular'
+      fullPath: '/formular'
+      preLoaderRoute: typeof FormularRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/architecture': {
@@ -147,8 +198,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ArchitectureRoute: ArchitectureRoute,
+  FormularRoute: FormularRoute,
   Ind2Route: Ind2Route,
   KontaktRoute: KontaktRoute,
+  Kontakt_oldRoute: Kontakt_oldRoute,
   ProjekteRoute: ProjekteRoute,
   TestRoute: TestRoute,
 }

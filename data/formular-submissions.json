@@ -1,0 +1,9 @@
+[
+  {
+    "name": "Test User",
+    "telefon": "0123456789",
+    "email": "test@example.com",
+    "message": "Hallo, das ist ein Test.",
+    "submittedAt": "2026-07-09T12:24:04.501Z"
+  }
+]

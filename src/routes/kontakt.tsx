@@ -10,9 +10,16 @@ export const Route = createFileRoute("/kontakt")({
   head: () => ({
     meta: [
       { title: "Kontakt — zu Philipp" },
-      { name: "description", content: "Lass uns über dein KI-Projekt sprechen. Direkt, ehrlich, technisch fundiert." },
+      {
+        name: "description",
+        content:
+          "Lass uns über dein KI-Projekt sprechen. Direkt, ehrlich, technisch fundiert.",
+      },
       { property: "og:title", content: "Kontakt" },
-      { property: "og:description", content: "Schreib mir über dein KI-Projekt." },
+      {
+        property: "og:description",
+        content: "Schreib mir über dein KI-Projekt.",
+      },
     ],
   }),
   component: ContactPage,
@@ -31,17 +38,15 @@ function ContactPage() {
     name: "",
     email: "",
     company: "",
-    message: ""
+    message: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
+  const updateField = (name: keyof typeof formData, value: string) => {
+    setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: value,
     }));
   };
-
-
 
   return (
     <main className="relative">
@@ -66,30 +71,28 @@ function ContactPage() {
                 e.preventDefault();
                 setSent(true);
               }}
-             className="glass rounded-2xl p-8 md:p-10 space-y-6"
+              className="glass rounded-2xl p-8 md:p-10 space-y-6"
             >
               <div className="grid md:grid-cols-2 gap-6">
-
-                <Field 
-                  label="Name" 
-                  name="name" 
-                  value={formData.name} 
-                  onChange={(val) => updateField("name", val)} 
+                <Field
+                  label="Name"
+                  name="name"
+                  value={formData.name}
+                  onChange={(val) => updateField("name", val)}
                 />
-                <Field 
-                  label="Email" 
-                  name="email" 
-                  type="email" 
-                  value={formData.email} 
-                  onChange={(val) => updateField("email", val)} 
-                /> 
-
-             </div>
-	      <Field 
-                label="Unternehmen" 
-                name="company" 
-                value={formData.company} 
-                onChange={(val) => updateField("company", val)} 
+                <Field
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(val) => updateField("email", val)}
+                />
+              </div>
+              <Field
+                label="Unternehmen"
+                name="company"
+                value={formData.company}
+                onChange={(val) => updateField("company", val)}
               />
 
               <div>
@@ -133,7 +136,9 @@ function ContactPage() {
                       <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                         {c.label}
                       </div>
-                      <div className="font-mono text-sm mt-1 break-all">{c.value}</div>
+                      <div className="font-mono text-sm mt-1 break-all">
+                        {c.value}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -171,7 +176,7 @@ function Field({
   name: string;
   type?: string;
   value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange: (value: string) => void;
 }) {
   return (
     <div>
@@ -183,7 +188,7 @@ function Field({
         name={name}
         type={type}
         value={value}
-        onChange={onChange}
+        onChange={(e) => onChange(e.target.value)}
         className="mt-2 w-full bg-transparent border-0 border-b border-border focus:border-primary outline-none py-3 text-foreground transition-colors"
       />
     </div>

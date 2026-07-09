@@ -49,9 +49,9 @@ function HomePage() {
         eyebrow="AI Engineer · Software Architekt"
         title={
           <>
-            KI mit <span className="text-gradient">Architektur</span>.
+            Agentic <span className="text-gradient">AI</span>.
             <br />
-            Softwareentwicklung mit <span className="text-gradient">Herz</span>.
+            Automatisierung <span className="text-gradient">mit System</span>.
           </>
         }
         subtitle="Ich konstruiere intelligente Agentic u Generative AI Systeme . von der ersten Idee bis zum Production-Deployment."
