@@ -134,5 +134,12 @@
     "company": "Universität Kassel",
     "message": "eee",
     "submittedAt": "2026-07-09T17:03:00.706Z"
+  },
+  {
+    "name": "Philipp",
+    "email": "jorekphilipp@gmail.com",
+    "company": "ich",
+    "message": "test",
+    "submittedAt": "2026-07-09T18:19:01.144Z"
   }
 ]
