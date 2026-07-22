@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig, type Plugin } from "vite";
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 //import { nitro } from "nitro/vite"; // Nitro steuert den Build ohne index.html
@@ -214,6 +215,12 @@ export default defineConfig({
     alias: {
       "@": path.resolve(process.cwd(), "src"),
     },
+  },
+
+  test: {
+    environment: "jsdom",
+    setupFiles: ["./src/test/setup.ts"],
+    globals: true,
   },
 
   //  resolve: {
