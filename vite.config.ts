@@ -11,6 +11,7 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
 import { saveFormularSubmission } from "./src/lib/formular-store";
 import { getChatReply, readChatEnv } from "./src/lib/chat-client";
+import { saveChatFeedback } from "./src/lib/chat-feedback-store";
 
 try {
   process.loadEnvFile();
@@ -109,6 +110,46 @@ function chatApiPlugin(): Plugin {
   };
 }
 
+// Dev/preview-only API: logs thumbs-up/down feedback on chat replies to
+// data/chat-feedback.json. Same caveat as the plugins above — only runs
+// under `vite dev` / `vite preview`. For production, see server/chat-server.mjs.
+function chatFeedbackApiPlugin(): Plugin {
+  const handler = async (
+    req: import("node:http").IncomingMessage,
+    res: import("node:http").ServerResponse,
+    next: () => void,
+  ) => {
+    if (req.url !== "/api/chat-feedback" || req.method !== "POST") {
+      return next();
+    }
+
+    try {
+      const chunks: Buffer[] = [];
+      for await (const chunk of req) chunks.push(chunk as Buffer);
+      const body = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
+      await saveChatFeedback(body);
+
+      res.statusCode = 200;
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ ok: true }));
+    } catch {
+      res.statusCode = 400;
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ ok: false }));
+    }
+  };
+
+  return {
+    name: "chat-feedback-api",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => void handler(req, res, next));
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use((req, res, next) => void handler(req, res, next));
+    },
+  };
+}
+
 export default defineConfig({
   base: "/",
   build: {
@@ -139,6 +180,7 @@ export default defineConfig({
     tailwindcss(),
     formularApiPlugin(),
     chatApiPlugin(),
+    chatFeedbackApiPlugin(),
     //    TanStackStartVite({
     TanStackRouterVite(
       // Configure any specific TanStack Start settings here if needed

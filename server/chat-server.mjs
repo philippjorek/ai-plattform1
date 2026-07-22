@@ -14,13 +14,18 @@
 
 import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 
 // Resolved relative to this file, not process.cwd() — the production
 // entrypoint script starts this with cwd "/", where a bare
 // process.loadEnvFile() would silently fail to find .env.
-const envPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".env");
+const envPath = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  ".env",
+);
 try {
   process.loadEnvFile(envPath);
 } catch {
@@ -37,10 +42,10 @@ const chatRequestSchema = z.object({
 });
 
 const SYSTEM_PROMPT =
-  'Du bist der virtuelle Assistent auf der Portfolio-Website "Service-mit-Herz" von Philipp, ' +
+  'Du bist der virtuelle Assistent auf der Portfolio-Website von Philipp Jorek, ' +
   "einem AI Architekten und Software-Engineer. Antworte kurz, freundlich und auf Deutsch. " +
   "Hilf Besuchern, sich über Leistungen, Projekte und technische Architektur zu orientieren. " +
-  "Bei konkreten Anfragen (Angebote, Zusammenarbeit) verweise auf die Kontaktseite (/kontakt) " +
+  "Bei konkreten Anfragen (Angebote, Zusammenarbeit, Termin) verweise auf die Kontaktseite " +
   "oder jorek@impli.de. Wenn du etwas nicht weißt, sag das ehrlich statt zu spekulieren.";
 
 function readChatEnv() {
@@ -76,6 +81,35 @@ async function getChatReply(input, env) {
   return reply;
 }
 
+const chatFeedbackSchema = z.object({
+  messageId: z.number(),
+  rating: z.enum(["up", "down"]),
+  text: z.string().max(4000).optional(),
+});
+
+const feedbackDataDir = path.resolve(process.cwd(), "data");
+const feedbackDataFile = path.join(feedbackDataDir, "chat-feedback.json");
+
+async function saveChatFeedback(input) {
+  const data = chatFeedbackSchema.parse(input);
+
+  await mkdir(feedbackDataDir, { recursive: true });
+
+  let entries = [];
+  try {
+    const raw = JSON.parse(await readFile(feedbackDataFile, "utf-8"));
+    if (Array.isArray(raw)) entries = raw;
+  } catch {
+    entries = [];
+  }
+
+  const entry = { ...data, loggedAt: new Date().toISOString() };
+  entries.push(entry);
+  await writeFile(feedbackDataFile, JSON.stringify(entries, null, 2), "utf-8");
+
+  return entry;
+}
+
 function readRequestBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -88,6 +122,23 @@ function readRequestBody(req) {
 const port = Number(process.env.PORT) || 8091;
 
 const server = createServer(async (req, res) => {
+  if (req.url === "/api/chat-feedback" && req.method === "POST") {
+    try {
+      const raw = await readRequestBody(req);
+      const body = JSON.parse(raw);
+      await saveChatFeedback(body);
+
+      res.statusCode = 200;
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ ok: true }));
+    } catch {
+      res.statusCode = 400;
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ ok: false }));
+    }
+    return;
+  }
+
   if (req.url !== "/api/chat" || req.method !== "POST") {
     res.statusCode = 404;
     res.setHeader("content-type", "application/json");

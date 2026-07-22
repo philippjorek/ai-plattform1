@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { MessageCircle, Send, X } from "lucide-react";
+import { MessageCircle, Send, ThumbsDown, ThumbsUp, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
@@ -10,7 +10,7 @@ type ChatMessage = {
 };
 
 const GREETING =
-  "Hi, ich bin der virtuelle Assistent von Service-mit-Herz. Frag mich etwas zu Leistungen, Projekten oder Kontakt.";
+  "Hi, ich bin Philipp, dein Assistent, wenn es um KI Themen geht. Frag mich etwas zu Projekten oder Softskills oder kontaktiere Philipp Jorek direkt.";
 
 const FALLBACK_ANSWER =
   "Der Chat ist gerade nicht erreichbar. Schreib mir gern direkt über die Kontaktseite, dann meldet sich Philipp persönlich.";
@@ -22,6 +22,7 @@ export function ChatWidget() {
   ]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [feedback, setFeedback] = useState<Record<number, "up" | "down">>({});
   const nextId = useRef(1);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -32,6 +33,19 @@ export function ChatWidget() {
       behavior: "smooth",
     });
   }, [messages, open, sending]);
+
+  const sendFeedback = (
+    messageId: number,
+    rating: "up" | "down",
+    text: string,
+  ) => {
+    setFeedback((prev) => ({ ...prev, [messageId]: rating }));
+    void fetch("/api/chat-feedback", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ messageId, rating, text }),
+    }).catch(() => {});
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -84,9 +98,6 @@ export function ChatWidget() {
               <p className="font-display text-sm font-semibold">
                 Chat-Assistent
               </p>
-              <p className="text-xs text-muted-foreground">
-                Powered by Open WebUI
-              </p>
             </div>
             <button
               type="button"
@@ -106,8 +117,8 @@ export function ChatWidget() {
               <div
                 key={m.id}
                 className={cn(
-                  "flex",
-                  m.role === "user" ? "justify-end" : "justify-start",
+                  "flex flex-col",
+                  m.role === "user" ? "items-end" : "items-start",
                 )}
               >
                 <div
@@ -120,6 +131,42 @@ export function ChatWidget() {
                 >
                   {m.text}
                 </div>
+                {m.role === "bot" && (
+                  <div className="mt-1 flex gap-1 pl-1">
+                    <button
+                      type="button"
+                      onClick={() => sendFeedback(m.id, "up", m.text)}
+                      aria-label="Antwort hilfreich"
+                      aria-pressed={feedback[m.id] === "up"}
+                      className={cn(
+                        "rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
+                        feedback[m.id] === "up" && "text-primary",
+                      )}
+                    >
+                      <ThumbsUp
+                        className="h-3.5 w-3.5"
+                        fill={feedback[m.id] === "up" ? "currentColor" : "none"}
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => sendFeedback(m.id, "down", m.text)}
+                      aria-label="Antwort nicht hilfreich"
+                      aria-pressed={feedback[m.id] === "down"}
+                      className={cn(
+                        "rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
+                        feedback[m.id] === "down" && "text-primary",
+                      )}
+                    >
+                      <ThumbsDown
+                        className="h-3.5 w-3.5"
+                        fill={
+                          feedback[m.id] === "down" ? "currentColor" : "none"
+                        }
+                      />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
             {sending && (

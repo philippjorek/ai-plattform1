@@ -13,6 +13,8 @@ import { Route as TestRouteImport } from './routes/test'
 import { Route as ProjekteRouteImport } from './routes/projekte'
 import { Route as KontaktRouteImport } from './routes/kontakt'
 import { Route as Ind2RouteImport } from './routes/ind2'
+import { Route as ImpressumRouteImport } from './routes/impressum'
+import { Route as DatenschutzRouteImport } from './routes/datenschutz'
 import { Route as ArchitectureRouteImport } from './routes/architecture'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -36,6 +38,16 @@ const Ind2Route = Ind2RouteImport.update({
   path: '/ind2',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ImpressumRoute = ImpressumRouteImport.update({
+  id: '/impressum',
+  path: '/impressum',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DatenschutzRoute = DatenschutzRouteImport.update({
+  id: '/datenschutz',
+  path: '/datenschutz',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ArchitectureRoute = ArchitectureRouteImport.update({
   id: '/architecture',
   path: '/architecture',
@@ -50,6 +62,8 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/architecture': typeof ArchitectureRoute
+  '/datenschutz': typeof DatenschutzRoute
+  '/impressum': typeof ImpressumRoute
   '/ind2': typeof Ind2Route
   '/kontakt': typeof KontaktRoute
   '/projekte': typeof ProjekteRoute
@@ -58,6 +72,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/architecture': typeof ArchitectureRoute
+  '/datenschutz': typeof DatenschutzRoute
+  '/impressum': typeof ImpressumRoute
   '/ind2': typeof Ind2Route
   '/kontakt': typeof KontaktRoute
   '/projekte': typeof ProjekteRoute
@@ -67,6 +83,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/architecture': typeof ArchitectureRoute
+  '/datenschutz': typeof DatenschutzRoute
+  '/impressum': typeof ImpressumRoute
   '/ind2': typeof Ind2Route
   '/kontakt': typeof KontaktRoute
   '/projekte': typeof ProjekteRoute
@@ -75,13 +93,30 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/architecture' | '/ind2' | '/kontakt' | '/projekte' | '/test'
+    | '/'
+    | '/architecture'
+    | '/datenschutz'
+    | '/impressum'
+    | '/ind2'
+    | '/kontakt'
+    | '/projekte'
+    | '/test'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/architecture' | '/ind2' | '/kontakt' | '/projekte' | '/test'
+  to:
+    | '/'
+    | '/architecture'
+    | '/datenschutz'
+    | '/impressum'
+    | '/ind2'
+    | '/kontakt'
+    | '/projekte'
+    | '/test'
   id:
     | '__root__'
     | '/'
     | '/architecture'
+    | '/datenschutz'
+    | '/impressum'
     | '/ind2'
     | '/kontakt'
     | '/projekte'
@@ -91,6 +126,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ArchitectureRoute: typeof ArchitectureRoute
+  DatenschutzRoute: typeof DatenschutzRoute
+  ImpressumRoute: typeof ImpressumRoute
   Ind2Route: typeof Ind2Route
   KontaktRoute: typeof KontaktRoute
   ProjekteRoute: typeof ProjekteRoute
@@ -127,6 +164,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Ind2RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/impressum': {
+      id: '/impressum'
+      path: '/impressum'
+      fullPath: '/impressum'
+      preLoaderRoute: typeof ImpressumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/datenschutz': {
+      id: '/datenschutz'
+      path: '/datenschutz'
+      fullPath: '/datenschutz'
+      preLoaderRoute: typeof DatenschutzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/architecture': {
       id: '/architecture'
       path: '/architecture'
@@ -147,6 +198,8 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ArchitectureRoute: ArchitectureRoute,
+  DatenschutzRoute: DatenschutzRoute,
+  ImpressumRoute: ImpressumRoute,
   Ind2Route: Ind2Route,
   KontaktRoute: KontaktRoute,
   ProjekteRoute: ProjekteRoute,
