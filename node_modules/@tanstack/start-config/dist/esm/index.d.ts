@@ -1,4 +1,0 @@
-import type { TanStackStartInputConfig } from './schema.js';
-import type { App as VinxiApp } from 'vinxi';
-export type { TanStackStartInputConfig, TanStackStartOutputConfig, } from './schema.js';
-export declare function defineConfig(inlineConfig?: TanStackStartInputConfig): Promise<VinxiApp>;

@@ -41,12 +41,13 @@ const chatRequestSchema = z.object({
   messages: z.array(chatMessageSchema).min(1).max(40),
 });
 
-const SYSTEM_PROMPT =
-  'Du bist der virtuelle Assistent auf der Portfolio-Website von Philipp Jorek, ' +
-  "einem AI Architekten und Software-Engineer. Antworte kurz, freundlich und auf Deutsch. " +
-  "Hilf Besuchern, sich über Leistungen, Projekte und technische Architektur zu orientieren. " +
-  "Bei konkreten Anfragen (Angebote, Zusammenarbeit, Termin) verweise auf die Kontaktseite " +
-  "oder jorek@impli.de. Wenn du etwas nicht weißt, sag das ehrlich statt zu spekulieren.";
+const SYSTEM_PROMPT = ""
+//set system-prompt in open-webui
+//  'Du bist der virtuelle Assistent auf der Portfolio-Website von Philipp Jorek, ' +
+//  "einem AI Architekten und Software-Engineer. Antworte kurz, freundlich und auf Deutsch. " +
+//  "Hilf Besuchern, sich über Leistungen, Projekte und technische Architektur zu orientieren. " +
+//  "Bei konkreten Anfragen (Angebote, Zusammenarbeit, Termin) verweise auf die Kontaktseite " +
+//  "oder jorek@impli.de. Wenn du etwas nicht weißt, sag das ehrlich statt zu spekulieren.";
 
 function readChatEnv() {
   const baseUrl = process.env.OPEN_WEBUI_URL;

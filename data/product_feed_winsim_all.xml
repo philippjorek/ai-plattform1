@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?><products><product>
+                            <productId>30952</productId>
+                            <productName>winSIM Allnet Flat 1 GB</productName>
+                            <tariffId>17131</tariffId>
+                            <tariffName>winSIM Allnet Flat 1 GB - 5,99 EUR monatlich</tariffName>
+                            <phoneId></phoneId>
+                            <phoneName></phoneName>
+                            <productCategory>SIM-Only</productCategory>
+                            <network>Drillisch</network>
+                            <contractDuration>1</contractDuration>
+                            <contractDurationText>1 Monat</contractDurationText>
+                            <brand>winSIM</brand>
+                            <manufacturer></manufacturer>
+                            <price>19,99</price>
+                            <hardwarePrice></hardwarePrice>
+                            <priceMonth>5,99</priceMonth>
+                            <priceMonthAfter12></priceMonthAfter12>
+                            <priceMonthAfter24></priceMonthAfter24>
+                            <tariffBaseFee>5,99</tariffBaseFee>
+                            <tariffBaseFeeAfter12></tariffBaseFeeAfter12>
+                            <tariffBaseFeeAfter24></tariffBaseFeeAfter24>
+                            <hardwareMonthFee></hardwareMonthFee>
+                            <shippingCosts1>0,00</shippingCosts1>
+                            <currency>Euro</currency>
+                            <availability></availability>
+                            <availabilityText></availabilityText>
+                            <numberPortability>No</numberPortability>
+                            <includedMinutes>Flat</includedMinutes>
+                            <includedMinutesText>Flat in alle dt. Fest- und Mobilfunknetze (ausgenommen Service- und Sonderrufnummern, Rückrufe aus der Mailbox sowie Anrufumleitungen)</includedMinutesText>
+                            <includedSMS>Flat</includedSMS>
+                            <includedSMSText>Flat in alle dt. Fest- und Mobilfunknetze (ausgenommen Service- und Sonderrufnummern)</includedSMSText>
+                            <includedMinutesAndSMS></includedMinutesAndSMS>
+                            <includedMinutesAndSMSText></includedMinutesAndSMSText>
+                            <includedDataVolume>1 GB</includedDataVolume>
+                            <includedDataVolumeText>1 GB mit Highspeed-Geschwindigkeit max. 50 MBit/s (Download) und 32 MBit/s (Upload). Down- und Upload-Geschwindigkeit entsprechen jeweils der maximal geschätzten und der beworbenen Geschwindigkeit. Danach max. 64 kBit/s (Download) und 64 kBit/s (Upload). Datenautomatik: Nach Verbrauch des monatlichen Inklusiv-Volumens wird automatisch bis zu 3 x pro Monat 200 MB zusätzliches Datenvolumen für jeweils nur 2 EUR aufgebucht. Die Datenautomatik ist deaktivierbar. Tethering/Hotspot: Ermöglicht das Teilen der mobilen Datenverbindung mit anderen Geräten. Geht zu Lasten des Datenvolumens des Tarifes.</includedDataVolumeText>
+                            <chargeLandline>0,00</chargeLandline>
+                            <chargeOtherNetworks>0,00</chargeOtherNetworks>
+                            <chargeOwnNetwork>0,00</chargeOwnNetwork>
+                            <chargeMinutesText></chargeMinutesText>
+                            <chargeSMS>0,00</chargeSMS>
+                            <chargeSMSText></chargeSMSText>
+                            <chargeDataVolume></chargeDataVolume>
+                            <chargeDataVolumeText></chargeDataVolumeText>
+                            <startingBalance>0,00</startingBalance>
+                            <summary>FLAT Internet 5G 1 GB mit bis zu 50 MBit/s Datenautomatik deaktivierbar. FLAT Telefonie in alle dt. Netze. FLAT SMS in alle dt. Netze. EU-Roaming inklusive.</summary>
+                            <hardwareHighlights></hardwareHighlights>
+                            <description>Einmaliger Bereitstellungspreis: 19,99 EUR. Monatlicher Paketpreis: 5,99 EUR. Mindestvertragslaufzeit: 1 Monat (Verlängerung auf unbestimmte Zeit, Kündigung in Textform jederzeit mit einer Frist von 1 Monat). EU-Roaming inklusive (Bei diesem Tarif handelt es sich um einen regulierten EU-Roamingtarif, der zu Inlandskonditionen im EU Ausland genutzt werden kann. Dabei fallen – bei angemessener Nutzung gemäß „Fair Use Policy“ – keine Aufschläge für die Nutzung von Roamingdiensten (Telefonie, SMS und Datenverbindungen) an.).</description>
+                            <imagePath>https://imagepool.winsim.de/v2/component/productFeed/sim.png</imagePath>
+                            <imagePathHardware></imagePathHardware>
+                            <deepLink>https://h.winsim.de?promotion_partner_id=16301&amp;promotion_product_id=5482&amp;promotion_channel_id=1612&amp;promotion_drag_vars=tv1&amp;target_product_url=https://www.winsim.de/details/30952/allnet-flat-1-gb</deepLink>
+                            <shippingCosts2>0,00</shippingCosts2>
+                            <Energy_Consumption_Label_Big></Energy_Consumption_Label_Big>
+                            <Energy_Consumption_Label_Small></Energy_Consumption_Label_Small>
+                            <Energy_Consumption_Value></Energy_Consumption_Value>
+                            <Product_Data_Sheet_Energy_Consumption></Product_Data_Sheet_Energy_Consumption>
+                    </product><product>
+                            <productId>60141</productId>
+                            <productName>winSIM Allnet Flat 1 GB</productName>
+                            <tariffId>17136</tariffId>
+                            <tariffName>winSIM Allnet Flat 1 GB - 5,99 EUR monatlich</tariffName>
+                            <phoneId></phoneId>
+                            <phoneName></phoneName>
+                            <productCategory>SIM-Only</productCategory>
+                            <network>Drillisch</network>
+                            <contractDuration>24</contractDuration>
+                            <contractDurationText>24 Monate</contractDurationText>
+                            <brand>winSIM</brand>
+                            <manufacturer></manufacturer>
+                            <price>19,99</price>
+                            <hardwarePrice></hardwarePrice>
+                            <priceMonth>5,99</priceMonth>
+                            <priceMonthAfter12></priceMonthAfter12>
+                            <priceMonthAfter24></priceMonthAfter24>
+                            <tariffBaseFee>5,99</tariffBaseFee>
+                            <tariffBaseFeeAfter12></tariffBaseFeeAfter12>
+                            <tariffBaseFeeAfter24></tariffBaseFeeAfter24>
+                            <hardwareMonthFee></hardwareMonthFee>
+                            <shippingCosts1>0,00</shippingCosts1>
+                            <currency>Euro</currency>
+                            <availability></availability>
+                            <availabilityText></availabilityText>
+                            <numberPortability>No</numberPortability>
+                            <includedMinutes>Flat</includedMinutes>
+                            <includedMinutesText>Flat in alle dt. Fest- und Mobilfunknetze (ausgenommen Service- und Sonderrufnummern, Rückrufe aus der Mailbox sowie Anrufumleitungen)</includedMinutesText>
+                            <includedSMS>Flat</includedSMS>
+                            <includedSMSText>Flat in alle dt. Fest- und Mobilfunknetze (ausgenommen Service- und Sonderrufnummern)</includedSMSText>
+                            <includedMinutesAndSMS></includedMinutesAndSMS>
+                            <includedMinutesAndSMSText></includedMinutesAndSMSText>
+                            <includedDataVolume>1 GB</includedDataVolume>
+                            <includedDataVolumeText>1 GB mit Highspeed-Geschwindigkeit max. 50 MBit/s (Download) und 32 MBit/s (Upload). Down- und Upload-Geschwindigkeit entsprechen jeweils der maximal geschätzten und der beworbenen Geschwindigkeit. Danach max. 64 kBit/s (Download) und 64 kBit/s (Upload). Datenautomatik: Nach Verbrauch des monatlichen Inklusiv-Volumens wird automatisch bis zu 3 x pro Monat 200 MB zusätzliches Datenvolumen für jeweils nur 2 EUR aufgebucht. Die Datenautomatik ist deaktivierbar. Tethering/Hotspot: Ermöglicht das Teilen der mobilen Datenverbindung mit anderen Geräten. Geht zu Lasten des Datenvolumens des Tarifes.</includedDataVolumeText>
+                            <chargeLandline>0,00</chargeLandline>
+                            <chargeOtherNetworks>0,00</chargeOtherNetworks>
+                            <chargeOwnNetwork>0,00</chargeOwnNetwork>
+                            <chargeMinutesText></chargeMinutesText>
+                            <chargeSMS>0,00</chargeSMS>
+                            <chargeSMSText></chargeSMSText>
+                            <chargeDataVolume></chargeDataVolume>
+                            <chargeDataVolumeText></chargeDataVolumeText>
+                            <startingBalance>0,00</startingBalance>
+                            <summary>FLAT Internet 5G 1 GB mit bis zu 50 MBit/s Datenautomatik deaktivierbar. FLAT Telefonie in alle dt. Netze. FLAT SMS in alle dt. Netze. EU-Roaming inklusive.</summary>
+                            <hardwareHighlights></hardwareHighlights>
+                            <description>Einmaliger Bereitstellungspreis: 19,99 EUR. Monatlicher Paketpreis: 5,99 EUR. Mindestvertragslaufzeit: 24 Monate (Die Kündigungsfrist beträgt 1 Monat zum Ende der Mindestvertragslaufzeit. Wird der Vertrag nicht in Textform gekündigt, verlängert er sich automatisch und kann mit einer Frist von einem Monat gekündigt werden.). EU-Roaming inklusive (Bei diesem Tarif handelt es sich um einen regulierten EU-Roamingtarif, der zu Inlandskonditionen im EU Ausland genutzt werden kann. Dabei fallen – bei angemessener Nutzung gemäß „Fair Use Policy“ – keine Aufschläge für die Nutzung von Roamingdiensten (Telefonie, SMS und Datenverbindungen) an.).</description>
+                            <imagePath>https://imagepool.winsim.de/v2/component/productFeed/sim.png</imagePath>
+                            <imagePathHardware></imagePathHardware>
+                            <deepLink>https://h.winsim.de?promotion_partner_id=16301&amp;promotion_product_id=5482&amp;promotion_channel_id=1612&amp;promotion_drag_vars=tv1&amp;target_product_url=https://www.winsim.de/details/60141/allnet-flat-1-gb</deepLink>
+                            <shippingCosts2>0,00</shippingCosts2>
+                            <Energy_Consumption_Label_Big></Energy_Consumption_Label_Big>
+                            <Energy_Consumption_Label_Small></Energy_Consumption_Label_Small>
+                            <Energy_Consumption_Value></Energy_Consumption_Value>
+                            <Product_Data_Sheet_Energy_Consumption></Product_Data_Sheet_Energy_Consumption>
+                    </product></products>
