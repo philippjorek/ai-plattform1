@@ -36,4 +36,4 @@ dist-ssr
 *.sw?
 */data/formular-submissions.json
 */data/*
-*/templates/api-livedata/product_feed_winsim_all.xml
+*product_feed_winsim_all.xml
