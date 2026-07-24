@@ -1,19 +1,19 @@
-#ai-plattform1 / service-mit-herz.de
+# AI-plattform1 / service-mit-herz.de
 
 
 ## Description
-This is a Demo and Prototype Website to demonstrate an user-Interface width AI Chatbot.
+	This is a Demo and Prototype Website to demonstrate an user-Interface width AI Chatbot.
 
-##Frameworks
-Vite
-React
-Typescript
+## Frameworks
+	Vite
+	React
+	Typescript
 
-##Architecture
-running on ubuntu server
-api of chatbot is to open-webui.
-using LLM Deepseek v4 flash
-using docker
+## Architecture
+	ubuntu server
+	api of chatbot is to open-webui.
+	LLM Deepseek v4 flash
+	Docker
 
-##Testing
-see folder /test
+## Testing
+	see folder /test
