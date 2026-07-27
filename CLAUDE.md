@@ -14,8 +14,10 @@ A German-language portfolio/marketing site ("Service-mit-Herz") for an AI archit
 - `npm run preview` — preview the production build (port 8082)
 - `npm run lint` — ESLint over the whole repo
 - `npm run format` — Prettier write over the whole repo
+- `npm test` — run the Vitest suite once (`vitest run`)
+- `npm run test:watch` — Vitest in watch mode
 
-There is no test script/framework configured in this repo. There is no `--fix` lint script; run `eslint . --fix` directly if needed.
+Tests use Vitest + Testing Library (jsdom environment, config in `vite.config.ts`'s `test` block, setup file `src/test/setup.ts`). There is no `--fix` lint script; run `eslint . --fix` directly if needed.
 
 `bunfig.toml` configures bun's install behavior (24h supply-chain age guard on new package versions) in case bun is ever used instead of npm; `package-lock.json` is the lockfile actually kept in sync with the npm scripts.
 

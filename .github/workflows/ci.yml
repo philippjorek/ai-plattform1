@@ -12,6 +12,7 @@ concurrency:
 
 jobs:
   ci:
+    name: Test and Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
