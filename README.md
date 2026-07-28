@@ -11,6 +11,14 @@
 	SSH (Security information is not public)
 	SQL
 
+## Programming Languages and formats
+	TypeScript
+	JavaScript
+	Python
+	HTML
+	JSON
+	Markdown
+
 ## Architecture
 	ubuntu server
 	Running inside of Docker
