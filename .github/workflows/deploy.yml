@@ -1,0 +1,88 @@
+# Automatic deployments
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+# Prevent multiple deployments at once
+concurrency:
+  group: deployment
+  cancel-in-progress: false
+
+jobs:
+  # 1.: Run tests
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - run: npm test
+
+  # 2.: Build the project
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - run: npm run build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-build
+          path: dist/
+
+# 3.: Deploy to staging
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    environment: staging        # Requires environment approval (optional)
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: production-build
+          path: dist/
+
+      - name: Deploy to staging
+        run: |
+          echo "Deploying to staging server"
+          echo "Files to deploy:"
+          ls -la dist/
+          echo "Staging deployment complete!"
+
+# 4.:Deploy to production (manual approval)
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    environment: production     # manual approval in GitHub settings
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: production-build
+          path: dist/
+
+      - name: Deploy to production
+        run: |
+          echo "Deploying to production server"
+          echo "Files to deploy:"
+          ls -la dist/
+          echo "Production deployment complete!"
