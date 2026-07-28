@@ -24,7 +24,8 @@ jobs:
       - run: npm install
       - run: npm test
 
-  # 2.: Build the project
+  # 2.: Build the project (CI validation only — the deploy job below does its
+  # own build inside the container, straight from a fresh git checkout).
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -37,52 +38,32 @@ jobs:
       - run: npm install
       - run: npm run build
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v5
-        with:
-          name: production-build
-          path: dist/
+# 3.: Deploy — runs on the self-hosted runner installed on the Ubuntu server
+# itself (see DEPLOYMENT.md). The container's entrypoint clones/pulls the repo
+# and builds it on its own, so this job just (re)builds the image from the
+# Dockerfile and recreates the running container.
 
-# 3.: Deploy to staging
-
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
+  deploy:
+    name: Deploy
+    runs-on: self-hosted
     needs: build
-    environment: staging        # Requires environment approval (optional)
+    environment: production     # manual approval in GitHub settings (optional)
 
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: production-build
-          path: dist/
+      - uses: actions/checkout@v5
 
-      - name: Deploy to staging
+      - name: Build image
+        run: docker build -t service-mit-herz:latest .
+
+      - name: Recreate container
         run: |
-          echo "Deploying to staging server"
-          echo "Files to deploy:"
-          ls -la dist/
-          echo "Staging deployment complete!"
-
-# 4.:Deploy to production (manual approval)
-
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: deploy-staging
-    environment: production     # manual approval in GitHub settings
-
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: production-build
-          path: dist/
-
-      - name: Deploy to production
-        run: |
-          echo "Deploying to production server"
-          echo "Files to deploy:"
-          ls -la dist/
-          echo "Production deployment complete!"
+          docker rm -f service-mit-herz-web 2>/dev/null || true
+          docker run -d \
+            --name service-mit-herz-web \
+            --restart unless-stopped \
+            -p 8082:8082 \
+            -p 8090:8090 \
+            -p 8091:8091 \
+            -v service-mit-herz-data:/data \
+            -v /srv/service-mit-herz/app.env:/run/secrets/app.env:ro \
+            service-mit-herz:latest
