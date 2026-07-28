@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   ci:
-    name: Test: Node ${{ matrix.node-version }} on ${{ matrix.os }}
+    name: Test Node ${{ matrix.node-version }} on ${{ matrix.os }}
 
     strategy:
       matrix:
