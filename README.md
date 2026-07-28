@@ -7,13 +7,26 @@
 ## Frameworks
 	Vite
 	React
-	Typescript
+	Tailwindcss
+	SSH (Security information is not public)
+	SQL
 
 ## Architecture
 	ubuntu server
-	api of chatbot is to open-webui.
+	Running inside of Docker
+	DNS-Server
+	API of chatbot is connected open-webui.
 	LLM Deepseek v4 flash
-	Docker
 
+## AI Development
+	Website-Development width Claude Code
+	LLM: Sonnet 4.6
+	
 ## Testing
-	see folder /test
+	Testing width vite: /test
+
+## CI/CD
+	Pipeline in Github: /.github/workflows/
+
+## Author
+	Developed by Philipp Jorek
