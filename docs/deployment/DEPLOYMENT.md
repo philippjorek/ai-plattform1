@@ -1,39 +1,37 @@
 # Deployment
 
-How this app runs in production: one Docker container on the Ubuntu server,
-built and restarted by `.github/workflows/deploy.yml` on every push to `main`.
+How this app runs in production: code is updated **inside an already-running
+Docker container** named `aiplattform2deploy` on the Ubuntu server, by
+`.github/workflows/deploy.yml` on every push to `main`. This pipeline does
+**not** build a Docker image or create/destroy the container — it only
+updates the code inside it and restarts it. `aiplattform2deploy` mirrors the
+sibling container `aiplattform2`: both serve their app on internal port
+`3000`. After deployment the app is reachable at
+**`deploy.service-mit-herz.de`**.
 
 ## How it works
 
-1. `Dockerfile` builds a small image containing only `docker-entrypoint.sh`,
-   Node 22, and git. It does **not** contain the app's source code.
-2. When the container starts, `docker-entrypoint.sh`:
-   - clones (or `git pull`s) `philippjorek/ai-plattform1` at `main` into
-     `/app/checkout`
-   - symlinks `/data` (a named volume, see below) in as the checkout's `data/`
-     folder, so form submissions and chat feedback survive redeploys
-   - copies in `.env` from a mounted secret file, if present
-   - runs `npm ci` and `npm run build`
-   - starts all three production processes: the web server (`vite preview`,
-     port 8082), `server/formular-server.mjs` (port 8090), and
-     `server/chat-server.mjs` (port 8091)
-   - if any one of those three processes dies, the container exits so
-     Docker's restart policy recreates it — which also re-pulls `main`
-3. `deploy.yml`'s `deploy` job runs `docker build` + `docker run` on a
-   **self-hosted GitHub Actions runner installed on the server itself** —
-   that's the only step that needs to happen on the server, so no SSH keys or
-   registry credentials have to leave GitHub.
+1. `deploy.yml`'s `deploy` job runs on a **self-hosted GitHub Actions runner
+   installed on the server itself** — that's the only step that needs to
+   happen on the server, so no SSH keys or registry credentials have to leave
+   GitHub.
+2. That job runs, via `docker exec` into `aiplattform2deploy`:
+   - `git -C /home/www/20260709/ai-plattform2 pull`
+   - `npm --prefix /home/www/20260709/ai-plattform2 ci`
+   - `npm --prefix /home/www/20260709/ai-plattform2 run build`
+3. It then runs `docker restart aiplattform2deploy`, so the container's own
+   startup command relaunches the app with the freshly built code on
+   port 3000.
 
-Because the entrypoint pulls fresh code on every start, a plain
-`docker restart service-mit-herz-web` (no rebuild) is enough to pick up new
-commits — rebuilding the image is only needed when `Dockerfile` or
-`docker-entrypoint.sh` itself changes.
+The container itself — its existence, image, port mapping, and startup
+command — is **not** managed by this pipeline. It must already be running
+before the `deploy` job can succeed.
 
 ## One-time server setup
 
-Run these once on the Ubuntu server that will run the container.
+Run these once on the Ubuntu server that hosts `aiplattform2deploy`.
 
-### 1. Install Docker
+### 1. Install Docker (if not already present)
 
 ```bash
 curl -fsSL https://get.docker.com | sh
@@ -50,90 +48,87 @@ runner**, then follow the generated commands, e.g.:
 mkdir -p /srv/actions-runner && cd /srv/actions-runner
 curl -o actions-runner.tar.gz -L <url from GitHub's instructions>
 tar xzf actions-runner.tar.gz
-./config.sh --url https://github.com/philippjorek/ai-plattform1 --token <token from GitHub>
+./config.sh --url https://github.com/<org>/<repo> --token <token from GitHub>
 sudo ./svc.sh install
 sudo ./svc.sh start
 ```
 
 The runner user needs to be in the `docker` group (step 1) so it can run
-`docker build`/`docker run` without `sudo`.
+`docker exec`/`docker restart` against `aiplattform2deploy` without `sudo`.
 
 Verify it shows up as **Idle** under Settings → Actions → Runners before
 continuing.
 
-### 3. Create the secrets file
+### 3. Ensure `aiplattform2deploy` exists and is set up correctly
 
-The app needs `OPEN_WEBUI_URL`, `OPEN_WEBUI_API_KEY`, `OPEN_WEBUI_MODEL` (see
-`server/chat-server.mjs`). These must never be committed to git or baked into
-the image — they're mounted into the container read-only at deploy time:
+This container is **not created by the pipeline** — it must already exist
+and be running. It needs:
 
-```bash
-sudo mkdir -p /srv/service-mit-herz
-sudo tee /srv/service-mit-herz/app.env > /dev/null <<'EOF'
-OPEN_WEBUI_URL=...
-OPEN_WEBUI_API_KEY=...
-OPEN_WEBUI_MODEL=...
-EOF
-sudo chmod 600 /srv/service-mit-herz/app.env
-```
+- **Node.js + npm + git installed inside the container** (the pipeline runs
+  `git pull` / `npm ci` / `npm run build` inside it via `docker exec`).
+- **A working git checkout at `/home/www/20260709/ai-plattform2` inside the
+  container**, on branch `main`, with a remote already configured that can
+  be pulled from **non-interactively** (no credential prompts) — set up a
+  deploy key or stored credential helper for whichever remote (GitLab or
+  GitHub) hosts this repo.
+- **Port 3000 published from the container to the host**, the same way the
+  sibling `aiplattform2` container publishes its port 3000 — e.g.
+  `-p 3000:3000` (or whatever host port your reverse proxy expects) on
+  `docker create`/`docker run`.
+- **A startup command (entrypoint/CMD) that serves the built app on port
+  3000** and is re-invoked automatically whenever the container restarts —
+  this is what makes `docker restart aiplattform2deploy` pick up the new
+  build. Confirm what this container actually runs on start; the app's own
+  `npm run preview` script defaults to port 8082 (see `package.json`), so if
+  `aiplattform2deploy` serves on 3000, either its startup command overrides
+  that port explicitly or it runs a different entrypoint — check this before
+  relying on the deploy pipeline.
 
-This path matches the `-v /srv/service-mit-herz/app.env:/run/secrets/app.env:ro`
-mount in `deploy.yml`. If you change the path on the server, update it there
-too.
+If any of the above isn't true yet, fix it directly on the container/its
+image — this file only documents what the pipeline assumes, it doesn't
+create it.
 
-### 4. Reverse proxy (if the domain should point at this app)
+### 4. Reverse proxy
 
-The container publishes three ports on the host: `8082` (web), `8090`
-(formular API), `8091` (chat API). Whatever already terminates TLS/handles
-the domain on this server (e.g. an nginx running on the host, outside this
-container) needs to route:
-
-- `/` → `http://127.0.0.1:8082`
-- `/api/formular` → `http://127.0.0.1:8090`
-- `/api/chat`, `/api/chat-feedback` → `http://127.0.0.1:8091`
-
-That reverse proxy config lives outside this repo and isn't managed by this
-pipeline.
+After deployment the site is reachable at **`deploy.service-mit-herz.de`**.
+Whatever already terminates TLS/handles that subdomain on this server (e.g.
+an nginx running on the host, outside this container) needs to route
+`deploy.service-mit-herz.de` → `http://127.0.0.1:3000` (or whatever host port
+is published in step 3). That reverse proxy config (including the DNS record
+for the subdomain and its TLS cert) lives outside this repo and isn't
+managed by this pipeline.
 
 ## Deploying
 
 Push to `main`. GitHub Actions runs `test` → `build` (both on GitHub-hosted
-runners, pure CI validation) → `deploy` (on the self-hosted runner, which
-actually builds the image and recreates the container). If the `production`
-environment has a required reviewer configured in repo settings, the `deploy`
-job pauses for approval first.
+runners, pure CI validation — they check out a fresh copy and build it, but
+don't touch the server) → `deploy` (on the self-hosted runner, which updates
+and restarts `aiplattform2deploy`). If the `production` environment has a
+required reviewer configured in repo settings, the `deploy` job pauses for
+approval first.
 
 ## Manual operations on the server
 
 ```bash
 # Tail logs
-docker logs -f service-mit-herz-web
+docker logs -f aiplattform2deploy
 
-# Pick up new commits without waiting for CI (rebuild not needed unless
-# Dockerfile/docker-entrypoint.sh changed)
-docker restart service-mit-herz-web
+# Manually repeat what the deploy job does
+docker exec aiplattform2deploy git -C /home/www/20260709/ai-plattform2 pull
+docker exec aiplattform2deploy npm --prefix /home/www/20260709/ai-plattform2 ci
+docker exec aiplattform2deploy npm --prefix /home/www/20260709/ai-plattform2 run build
+docker restart aiplattform2deploy
 
-# Full rebuild + recreate, same as the deploy job
-cd /path/to/checked-out/repo && git pull
-docker build -t service-mit-herz:latest .
-docker rm -f service-mit-herz-web
-docker run -d --name service-mit-herz-web --restart unless-stopped \
-  -p 8082:8082 -p 8090:8090 -p 8091:8091 \
-  -v service-mit-herz-data:/data \
-  -v /srv/service-mit-herz/app.env:/run/secrets/app.env:ro \
-  service-mit-herz:latest
-
-# Inspect persisted form/chat data
-docker run --rm -v service-mit-herz-data:/data alpine ls -la /data
+# Shell into the container to inspect the checkout directly
+docker exec -it aiplattform2deploy bash
 ```
 
 ## Known tradeoffs
 
-- **Slower container starts**: `npm ci` + `npm run build` run fresh on every
-  container start (usually 1–2 min), since the image itself doesn't bundle
-  the app. Acceptable for a single-server, low-traffic deployment; would need
-  revisiting (e.g. baking the build into the image at `docker build` time
-  instead) if restarts become frequent or startup latency matters.
+- **Shared, pre-provisioned container**: unlike a fully disposable
+  build-and-recreate flow, `aiplattform2deploy` is long-lived and manually
+  provisioned — if its git remote, Node version, or startup command drift
+  from what this file describes, the deploy job will fail or silently serve
+  stale code. Keep this doc in sync if that setup changes.
 - **No separate staging environment**: `deploy.yml` deploys straight to the
-  one production container. If a second environment is needed later, run a
-  second container (different name/ports) from the same image.
+  one production container.

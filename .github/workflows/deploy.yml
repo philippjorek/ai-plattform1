@@ -39,9 +39,12 @@ jobs:
       - run: npm run build
 
 # 3.: Deploy — runs on the self-hosted runner installed on the Ubuntu server
-# itself (see DEPLOYMENT.md). The container's entrypoint clones/pulls the repo
-# and builds it on its own, so this job just (re)builds the image from the
-# Dockerfile and recreates the running container.
+# itself (see docs/deployment/DEPLOYMENT.md). Unlike a fresh image build, this
+# updates the code *inside* the already-running "aiplattform2deploy" container
+# (git pull + npm ci + npm run build via `docker exec`), then restarts that
+# same container so its own startup command picks up the new build on
+# port 3000. The container itself is provisioned/maintained outside this
+# pipeline — see DEPLOYMENT.md for one-time setup.
 
   deploy:
     name: Deploy
@@ -49,21 +52,19 @@ jobs:
     needs: build
     environment: production     # manual approval in GitHub settings (optional)
 
+    env:
+      CONTAINER: aiplattform2deploy
+      APP_DIR: /home/www/20260709/ai-plattform2
+
     steps:
-      - uses: actions/checkout@v5
+      - name: Pull latest code inside container
+        run: docker exec "$CONTAINER" git -C "$APP_DIR" pull
 
-      - name: Build image
-        run: docker build -t service-mit-herz:latest .
+      - name: Install dependencies inside container
+        run: docker exec "$CONTAINER" npm --prefix "$APP_DIR" ci
 
-      - name: Recreate container
-        run: |
-          docker rm -f service-mit-herz-web 2>/dev/null || true
-          docker run -d \
-            --name service-mit-herz-web \
-            --restart unless-stopped \
-            -p 8082:8082 \
-            -p 8090:8090 \
-            -p 8091:8091 \
-            -v service-mit-herz-data:/data \
-            -v /srv/service-mit-herz/app.env:/run/secrets/app.env:ro \
-            service-mit-herz:latest
+      - name: Build inside container
+        run: docker exec "$CONTAINER" npm --prefix "$APP_DIR" run build
+
+      - name: Restart container to pick up new build
+        run: docker restart "$CONTAINER"
