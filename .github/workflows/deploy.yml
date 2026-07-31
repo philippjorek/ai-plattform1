@@ -54,7 +54,7 @@ jobs:
 
     env:
       CONTAINER: aiplattform2deploy
-      APP_DIR: /home/www/20260709/ai-plattform2
+      APP_DIR: /home/www/20260706/ai-plattform1
 
     steps:
       - name: Pull latest code inside container
