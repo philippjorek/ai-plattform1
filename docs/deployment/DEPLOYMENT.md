@@ -4,9 +4,11 @@ How this app runs in production: code is updated **inside an already-running
 Docker container** named `aiplattform2deploy` on the Ubuntu server, by
 `.github/workflows/deploy.yml` on every push to `main`. This pipeline does
 **not** build a Docker image or create/destroy the container — it only
-updates the code inside it and restarts it. `aiplattform2deploy` mirrors the
-sibling container `aiplattform2`: both serve their app on internal port
-`3000`. After deployment the app is reachable at
+updates the code inside it and restarts it. The container's startup command
+is this repo's `docker-entrypoint.sh` (see `Dockerfile`), which runs three
+processes on internal ports **8082** (web, `vite preview`), **8090**
+(formular API, `server/formular-server.mjs`), and **8091** (chat API,
+`server/chat-server.mjs`). After deployment the app is reachable at
 **`deploy.service-mit-herz.de`**.
 
 ## How it works
@@ -19,9 +21,10 @@ sibling container `aiplattform2`: both serve their app on internal port
    - `git -C /home/www/20260709/ai-plattform2 pull`
    - `npm --prefix /home/www/20260709/ai-plattform2 ci`
    - `npm --prefix /home/www/20260709/ai-plattform2 run build`
-3. It then runs `docker restart aiplattform2deploy`, so the container's own
-   startup command relaunches the app with the freshly built code on
-   port 3000.
+3. It then runs `docker restart aiplattform2deploy`, so `docker-entrypoint.sh`
+   re-runs on container start, re-pulling/rebuilding the app and relaunching
+   the three processes with the freshly built code on ports 8082, 8090, and
+   8091.
 
 The container itself — its existence, image, port mapping, and startup
 command — is **not** managed by this pipeline. It must already be running
@@ -71,18 +74,14 @@ and be running. It needs:
   be pulled from **non-interactively** (no credential prompts) — set up a
   deploy key or stored credential helper for whichever remote (GitLab or
   GitHub) hosts this repo.
-- **Port 3000 published from the container to the host**, the same way the
-  sibling `aiplattform2` container publishes its port 3000 — e.g.
-  `-p 3000:3000` (or whatever host port your reverse proxy expects) on
-  `docker create`/`docker run`.
-- **A startup command (entrypoint/CMD) that serves the built app on port
-  3000** and is re-invoked automatically whenever the container restarts —
-  this is what makes `docker restart aiplattform2deploy` pick up the new
-  build. Confirm what this container actually runs on start; the app's own
-  `npm run preview` script defaults to port 8082 (see `package.json`), so if
-  `aiplattform2deploy` serves on 3000, either its startup command overrides
-  that port explicitly or it runs a different entrypoint — check this before
-  relying on the deploy pipeline.
+- **Ports 8082, 8090, and 8091 published from the container to the host**
+  (matching the `Dockerfile`'s `EXPOSE`) — e.g. `-p 8082:8082 -p 8090:8090
+  -p 8091:8091` on `docker create`/`docker run`.
+- **A startup command (entrypoint/CMD) that is `docker-entrypoint.sh`** (or
+  functionally equivalent to it) and is re-invoked automatically whenever the
+  container restarts — this is what makes `docker restart aiplattform2deploy`
+  pick up the new build and relaunch all three processes (web on 8082,
+  formular API on 8090, chat API on 8091).
 
 If any of the above isn't true yet, fix it directly on the container/its
 image — this file only documents what the pipeline assumes, it doesn't
@@ -92,11 +91,16 @@ create it.
 
 After deployment the site is reachable at **`deploy.service-mit-herz.de`**.
 Whatever already terminates TLS/handles that subdomain on this server (e.g.
-an nginx running on the host, outside this container) needs to route
-`deploy.service-mit-herz.de` → `http://127.0.0.1:3000` (or whatever host port
-is published in step 3). That reverse proxy config (including the DNS record
-for the subdomain and its TLS cert) lives outside this repo and isn't
-managed by this pipeline.
+an nginx running on the host, outside this container) needs to route, based
+on path, to the three ports published in step 3:
+
+- `deploy.service-mit-herz.de/` (everything else) → `http://127.0.0.1:8082`
+- `deploy.service-mit-herz.de/api/formular` → `http://127.0.0.1:8090`
+- `deploy.service-mit-herz.de/api/chat` and `/api/chat-feedback` →
+  `http://127.0.0.1:8091`
+
+That reverse proxy config (including the DNS record for the subdomain and
+its TLS cert) lives outside this repo and isn't managed by this pipeline.
 
 ## Deploying
 
@@ -106,6 +110,33 @@ don't touch the server) → `deploy` (on the self-hosted runner, which updates
 and restarts `aiplattform2deploy`). If the `production` environment has a
 required reviewer configured in repo settings, the `deploy` job pauses for
 approval first.
+
+### If a step fails
+
+`deploy.yml` defines no explicit failure handling (no `continue-on-error`,
+no retry, no rollback step) on the `test`, `build`, or `deploy` jobs — it
+relies entirely on GitHub Actions' default `needs:` behavior:
+
+- **`test` fails** (`npm test` exits non-zero): the `test` job is marked
+  failed. `build` (`needs: test`) and `deploy` (`needs: build`) are both
+  **skipped** — they never run. `aiplattform2deploy` is never touched, so
+  it keeps serving whatever it was already running before the push.
+- **`build` fails** (`npm run build` exits non-zero, after `test` passed):
+  same effect — `deploy` (`needs: build`) is **skipped**, production is
+  untouched.
+- **`deploy` fails partway through** (e.g. `git pull` or `npm ci` fails
+  inside the container): the job stops at that step; later steps
+  (`npm run build`, `docker restart`) don't run. The container keeps
+  running on its **previous** build — `docker restart` is the last step,
+  so a failure before it never applies the new code. There is no automatic
+  rollback of the git checkout inside the container; a failed `npm ci`/
+  `npm run build` there can leave `node_modules`/`dist` in a partially
+  updated state until the next successful deploy run overwrites it.
+
+In short: a failure at any stage blocks the pipeline from reaching
+`docker restart`, so the live container is never left serving a broken
+build — but nothing notifies anyone beyond the GitHub Actions run showing
+red, and nothing retries automatically.
 
 ## Manual operations on the server
 

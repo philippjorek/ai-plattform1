@@ -42,9 +42,11 @@ jobs:
 # itself (see docs/deployment/DEPLOYMENT.md). Unlike a fresh image build, this
 # updates the code *inside* the already-running "aiplattform2deploy" container
 # (git pull + npm ci + npm run build via `docker exec`), then restarts that
-# same container so its own startup command picks up the new build on
-# port 3000. The container itself is provisioned/maintained outside this
-# pipeline — see DEPLOYMENT.md for one-time setup.
+# same container so its startup command (docker-entrypoint.sh) relaunches the
+# app's three processes: web preview on port 8082, the formular API on port
+# 8090, and the chat API on port 8091. The container itself is
+# provisioned/maintained outside this pipeline — see DEPLOYMENT.md for
+# one-time setup.
 
   deploy:
     name: Deploy
@@ -54,7 +56,7 @@ jobs:
 
     env:
       CONTAINER: aiplattform2deploy
-      APP_DIR: /home/www/20260706/ai-plattform1
+      APP_DIR: /home/www/20260709/ai-plattform2
 
     steps:
       - name: Pull latest code inside container
