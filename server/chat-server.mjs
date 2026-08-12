@@ -17,6 +17,8 @@ import { fileURLToPath } from "node:url";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
+import { applyCorsHeaders, handlePreflight } from "./cors.mjs";
+import { checkRateLimit, getClientIp } from "./rate-limit.mjs";
 
 // Resolved relative to this file, not process.cwd() — the production
 // entrypoint script starts this with cwd "/", where a bare
@@ -41,7 +43,7 @@ const chatRequestSchema = z.object({
   messages: z.array(chatMessageSchema).min(1).max(40),
 });
 
-const SYSTEM_PROMPT = ""
+const SYSTEM_PROMPT = "";
 //set system-prompt in open-webui
 //  'Du bist der virtuelle Assistent auf der Portfolio-Website von Philipp Jorek, ' +
 //  "einem AI Architekten und Software-Engineer. Antworte kurz, freundlich und auf Deutsch. " +
@@ -91,6 +93,12 @@ const chatFeedbackSchema = z.object({
 const feedbackDataDir = path.resolve(process.cwd(), "data");
 const feedbackDataFile = path.join(feedbackDataDir, "chat-feedback.json");
 
+// Bounds on-disk growth of the append-only feedback file, mirroring
+// src/lib/chat-feedback-store.ts — oldest-first eviction, since rate
+// limiting already throttles the abuse path that would trigger eviction.
+const MAX_ENTRIES = 5000;
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+
 async function saveChatFeedback(input) {
   const data = chatFeedbackSchema.parse(input);
 
@@ -106,34 +114,81 @@ async function saveChatFeedback(input) {
 
   const entry = { ...data, loggedAt: new Date().toISOString() };
   entries.push(entry);
-  await writeFile(feedbackDataFile, JSON.stringify(entries, null, 2), "utf-8");
+
+  while (entries.length > MAX_ENTRIES) entries.shift();
+
+  let serialized = JSON.stringify(entries, null, 2);
+  while (
+    Buffer.byteLength(serialized, "utf-8") > MAX_FILE_BYTES &&
+    entries.length > 1
+  ) {
+    entries.shift();
+    serialized = JSON.stringify(entries, null, 2);
+  }
+
+  await writeFile(feedbackDataFile, serialized, "utf-8");
 
   return entry;
 }
 
-function readRequestBody(req) {
+class BodyTooLargeError extends Error {}
+
+function readRequestBody(req, maxBytes) {
   return new Promise((resolve, reject) => {
     const chunks = [];
-    req.on("data", (chunk) => chunks.push(chunk));
+    let total = 0;
+    req.on("data", (chunk) => {
+      total += chunk.length;
+      if (total > maxBytes) {
+        req.destroy();
+        reject(new BodyTooLargeError());
+        return;
+      }
+      chunks.push(chunk);
+    });
     req.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
     req.on("error", reject);
   });
 }
 
+// 40 messages * 4000 chars max content each, plus JSON overhead.
+const MAX_CHAT_BODY_BYTES = 250 * 1024;
+const MAX_FEEDBACK_BODY_BYTES = 20 * 1024;
+
+const CHAT_RATE_LIMIT = { windowMs: 5 * 60 * 1000, max: 20 };
+const FEEDBACK_RATE_LIMIT = { windowMs: 10 * 60 * 1000, max: 30 };
+
 const port = Number(process.env.PORT) || 8091;
 
 const server = createServer(async (req, res) => {
+  if (handlePreflight(req, res)) return;
+
   if (req.url === "/api/chat-feedback" && req.method === "POST") {
+    applyCorsHeaders(res);
+
+    const { limited, retryAfterSeconds } = checkRateLimit(
+      "chat-feedback",
+      getClientIp(req),
+      FEEDBACK_RATE_LIMIT,
+    );
+    if (limited) {
+      res.statusCode = 429;
+      res.setHeader("retry-after", String(retryAfterSeconds));
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ ok: false, error: "too many requests" }));
+      return;
+    }
+
     try {
-      const raw = await readRequestBody(req);
+      const raw = await readRequestBody(req, MAX_FEEDBACK_BODY_BYTES);
       const body = JSON.parse(raw);
       await saveChatFeedback(body);
 
       res.statusCode = 200;
       res.setHeader("content-type", "application/json");
       res.end(JSON.stringify({ ok: true }));
-    } catch {
-      res.statusCode = 400;
+    } catch (err) {
+      res.statusCode = err instanceof BodyTooLargeError ? 413 : 400;
       res.setHeader("content-type", "application/json");
       res.end(JSON.stringify({ ok: false }));
     }
@@ -141,11 +196,14 @@ const server = createServer(async (req, res) => {
   }
 
   if (req.url !== "/api/chat" || req.method !== "POST") {
+    applyCorsHeaders(res);
     res.statusCode = 404;
     res.setHeader("content-type", "application/json");
     res.end(JSON.stringify({ ok: false }));
     return;
   }
+
+  applyCorsHeaders(res);
 
   const env = readChatEnv();
   if (!env) {
@@ -157,16 +215,29 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  const { limited, retryAfterSeconds } = checkRateLimit(
+    "chat",
+    getClientIp(req),
+    CHAT_RATE_LIMIT,
+  );
+  if (limited) {
+    res.statusCode = 429;
+    res.setHeader("retry-after", String(retryAfterSeconds));
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ ok: false, error: "too many requests" }));
+    return;
+  }
+
   try {
-    const raw = await readRequestBody(req);
+    const raw = await readRequestBody(req, MAX_CHAT_BODY_BYTES);
     const body = JSON.parse(raw);
     const reply = await getChatReply(body, env);
 
     res.statusCode = 200;
     res.setHeader("content-type", "application/json");
     res.end(JSON.stringify({ ok: true, reply }));
-  } catch {
-    res.statusCode = 400;
+  } catch (err) {
+    res.statusCode = err instanceof BodyTooLargeError ? 413 : 400;
     res.setHeader("content-type", "application/json");
     res.end(JSON.stringify({ ok: false, error: "chat request failed" }));
   }

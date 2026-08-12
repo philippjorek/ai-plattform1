@@ -118,12 +118,15 @@ function ContactPage() {
               />
 
               <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                <label
+                  htmlFor="message"
+                  className="text-xs uppercase tracking-[0.2em] text-muted-foreground"
+                >
                   Worum geht's?
                 </label>
                 <textarea
                   required
-
+                  id="message"
                   name="message"
                   value={formData.message}
                   onChange={(e) => updateField("message", e.target.value)}
@@ -220,11 +223,15 @@ function Field({
 }) {
   return (
     <div>
-      <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+      <label
+        htmlFor={name}
+        className="text-xs uppercase tracking-[0.2em] text-muted-foreground"
+      >
         {label}
       </label>
       <input
         required
+        id={name}
         name={name}
         type={type}
         value={value}

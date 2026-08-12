@@ -13,6 +13,8 @@ import path from "node:path";
 import { saveFormularSubmission } from "./src/lib/formular-store";
 import { getChatReply, readChatEnv } from "./src/lib/chat-client";
 import { saveChatFeedback } from "./src/lib/chat-feedback-store";
+import { applyCorsHeaders, handlePreflight } from "./src/lib/cors";
+import { checkRateLimit, getClientIp } from "./src/lib/rate-limit";
 
 try {
   process.loadEnvFile();
@@ -20,31 +22,76 @@ try {
   // no .env file present — fine in environments where env vars are set another way
 }
 
+// Shared by the three dev/preview-only API plugins below, mirroring the
+// bounded body reading in server/formular-server.mjs and
+// server/chat-server.mjs — rejects before JSON.parse ever runs on an
+// oversized body, independent of the entry-count cap on the JSON stores.
+class BodyTooLargeError extends Error {}
+
+function readBoundedBody(
+  req: import("node:http").IncomingMessage,
+  maxBytes: number,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let total = 0;
+    req.on("data", (chunk: Buffer) => {
+      total += chunk.length;
+      if (total > maxBytes) {
+        req.destroy();
+        reject(new BodyTooLargeError());
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
+    req.on("error", reject);
+  });
+}
+
 // Dev/preview-only API: persists Formular submissions to data/formular-submissions.json.
 // There is no production server wired up yet (nitro/Start plugin above are disabled),
 // so this only runs under `vite dev` / `vite preview`. For a production-capable
 // equivalent that runs without Vite, see server/formular-server.mjs.
+const FORMULAR_MAX_BODY_BYTES = 20 * 1024;
+const FORMULAR_RATE_LIMIT = { windowMs: 10 * 60 * 1000, max: 5 };
+
 function formularApiPlugin(): Plugin {
   const handler = async (
     req: import("node:http").IncomingMessage,
     res: import("node:http").ServerResponse,
     next: () => void,
   ) => {
+    if (handlePreflight(req, res)) return;
     if (req.url !== "/api/formular" || req.method !== "POST") {
       return next();
     }
 
+    applyCorsHeaders(res);
+
+    const { limited, retryAfterSeconds } = checkRateLimit(
+      "formular",
+      getClientIp(req),
+      FORMULAR_RATE_LIMIT,
+    );
+    if (limited) {
+      res.statusCode = 429;
+      res.setHeader("retry-after", String(retryAfterSeconds));
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ ok: false, error: "too many requests" }));
+      return;
+    }
+
     try {
-      const chunks: Buffer[] = [];
-      for await (const chunk of req) chunks.push(chunk as Buffer);
-      const body = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
+      const raw = await readBoundedBody(req, FORMULAR_MAX_BODY_BYTES);
+      const body = JSON.parse(raw);
       await saveFormularSubmission(body);
 
       res.statusCode = 200;
       res.setHeader("content-type", "application/json");
       res.end(JSON.stringify({ ok: true, saved: true }));
-    } catch {
-      res.statusCode = 400;
+    } catch (err) {
+      res.statusCode = err instanceof BodyTooLargeError ? 413 : 400;
       res.setHeader("content-type", "application/json");
       res.end(JSON.stringify({ ok: false, saved: false }));
     }
@@ -64,15 +111,22 @@ function formularApiPlugin(): Plugin {
 // Dev/preview-only API: proxies chat messages to Open WebUI. Same caveat as
 // formularApiPlugin above — only runs under `vite dev` / `vite preview`.
 // For production, see server/chat-server.mjs.
+// 40 messages * 4000 chars max content each, plus JSON overhead.
+const CHAT_MAX_BODY_BYTES = 250 * 1024;
+const CHAT_RATE_LIMIT = { windowMs: 5 * 60 * 1000, max: 20 };
+
 function chatApiPlugin(): Plugin {
   const handler = async (
     req: import("node:http").IncomingMessage,
     res: import("node:http").ServerResponse,
     next: () => void,
   ) => {
+    if (handlePreflight(req, res)) return;
     if (req.url !== "/api/chat" || req.method !== "POST") {
       return next();
     }
+
+    applyCorsHeaders(res);
 
     const env = readChatEnv();
     if (!env) {
@@ -84,17 +138,29 @@ function chatApiPlugin(): Plugin {
       return;
     }
 
+    const { limited, retryAfterSeconds } = checkRateLimit(
+      "chat",
+      getClientIp(req),
+      CHAT_RATE_LIMIT,
+    );
+    if (limited) {
+      res.statusCode = 429;
+      res.setHeader("retry-after", String(retryAfterSeconds));
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ ok: false, error: "too many requests" }));
+      return;
+    }
+
     try {
-      const chunks: Buffer[] = [];
-      for await (const chunk of req) chunks.push(chunk as Buffer);
-      const body = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
+      const raw = await readBoundedBody(req, CHAT_MAX_BODY_BYTES);
+      const body = JSON.parse(raw);
       const reply = await getChatReply(body, env);
 
       res.statusCode = 200;
       res.setHeader("content-type", "application/json");
       res.end(JSON.stringify({ ok: true, reply }));
-    } catch {
-      res.statusCode = 400;
+    } catch (err) {
+      res.statusCode = err instanceof BodyTooLargeError ? 413 : 400;
       res.setHeader("content-type", "application/json");
       res.end(JSON.stringify({ ok: false, error: "chat request failed" }));
     }
@@ -114,27 +180,45 @@ function chatApiPlugin(): Plugin {
 // Dev/preview-only API: logs thumbs-up/down feedback on chat replies to
 // data/chat-feedback.json. Same caveat as the plugins above — only runs
 // under `vite dev` / `vite preview`. For production, see server/chat-server.mjs.
+const FEEDBACK_MAX_BODY_BYTES = 20 * 1024;
+const FEEDBACK_RATE_LIMIT = { windowMs: 10 * 60 * 1000, max: 30 };
+
 function chatFeedbackApiPlugin(): Plugin {
   const handler = async (
     req: import("node:http").IncomingMessage,
     res: import("node:http").ServerResponse,
     next: () => void,
   ) => {
+    if (handlePreflight(req, res)) return;
     if (req.url !== "/api/chat-feedback" || req.method !== "POST") {
       return next();
     }
 
+    applyCorsHeaders(res);
+
+    const { limited, retryAfterSeconds } = checkRateLimit(
+      "chat-feedback",
+      getClientIp(req),
+      FEEDBACK_RATE_LIMIT,
+    );
+    if (limited) {
+      res.statusCode = 429;
+      res.setHeader("retry-after", String(retryAfterSeconds));
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ ok: false, error: "too many requests" }));
+      return;
+    }
+
     try {
-      const chunks: Buffer[] = [];
-      for await (const chunk of req) chunks.push(chunk as Buffer);
-      const body = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
+      const raw = await readBoundedBody(req, FEEDBACK_MAX_BODY_BYTES);
+      const body = JSON.parse(raw);
       await saveChatFeedback(body);
 
       res.statusCode = 200;
       res.setHeader("content-type", "application/json");
       res.end(JSON.stringify({ ok: true }));
-    } catch {
-      res.statusCode = 400;
+    } catch (err) {
+      res.statusCode = err instanceof BodyTooLargeError ? 413 : 400;
       res.setHeader("content-type", "application/json");
       res.end(JSON.stringify({ ok: false }));
     }

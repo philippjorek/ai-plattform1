@@ -3,10 +3,10 @@ import path from "node:path";
 import { z } from "zod";
 
 export const formularSubmissionSchema = z.object({
-  name: z.string().min(1),
-  email: z.string().email(),
-  company: z.string().optional(),
-  message: z.string().min(1),
+  name: z.string().min(1).max(200),
+  email: z.string().email().max(320),
+  company: z.string().max(200).optional(),
+  message: z.string().min(1).max(5000),
 });
 
 export type FormularSubmission = z.infer<typeof formularSubmissionSchema> & {
@@ -15,6 +15,13 @@ export type FormularSubmission = z.infer<typeof formularSubmissionSchema> & {
 
 const dataDir = path.resolve(process.cwd(), "data");
 const dataFile = path.join(dataDir, "formular-submissions.json");
+
+// Bounds on-disk growth of the append-only submissions file. Eviction is
+// oldest-first (not reject-new-writes) so a burst of abuse can't also block
+// a genuine visitor's submission — rate limiting is what throttles the
+// abuse path that would trigger eviction in the first place.
+const MAX_ENTRIES = 5000;
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
 export async function saveFormularSubmission(
   input: unknown,
@@ -36,7 +43,19 @@ export async function saveFormularSubmission(
     submittedAt: new Date().toISOString(),
   };
   submissions.push(submission);
-  await writeFile(dataFile, JSON.stringify(submissions, null, 2), "utf-8");
+
+  while (submissions.length > MAX_ENTRIES) submissions.shift();
+
+  let serialized = JSON.stringify(submissions, null, 2);
+  while (
+    Buffer.byteLength(serialized, "utf-8") > MAX_FILE_BYTES &&
+    submissions.length > 1
+  ) {
+    submissions.shift();
+    serialized = JSON.stringify(submissions, null, 2);
+  }
+
+  await writeFile(dataFile, serialized, "utf-8");
 
   return submission;
 }

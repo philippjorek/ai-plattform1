@@ -14,16 +14,24 @@ import { createServer } from "node:http";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
+import { applyCorsHeaders, handlePreflight } from "./cors.mjs";
+import { checkRateLimit, getClientIp } from "./rate-limit.mjs";
 
 const formularSubmissionSchema = z.object({
-  name: z.string().min(1),
-  email: z.string().email(),
-  company: z.string().optional(),
-  message: z.string().min(1),
+  name: z.string().min(1).max(200),
+  email: z.string().email().max(320),
+  company: z.string().max(200).optional(),
+  message: z.string().min(1).max(5000),
 });
 
 const dataDir = path.resolve(process.cwd(), "data");
 const dataFile = path.join(dataDir, "formular-submissions.json");
+
+// Bounds on-disk growth of the append-only submissions file, mirroring
+// src/lib/formular-store.ts — oldest-first eviction, since rate limiting
+// already throttles the abuse path that would trigger eviction.
+const MAX_ENTRIES = 5000;
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
 async function saveFormularSubmission(input) {
   const data = formularSubmissionSchema.parse(input);
@@ -40,40 +48,85 @@ async function saveFormularSubmission(input) {
 
   const submission = { ...data, submittedAt: new Date().toISOString() };
   submissions.push(submission);
-  await writeFile(dataFile, JSON.stringify(submissions, null, 2), "utf-8");
+
+  while (submissions.length > MAX_ENTRIES) submissions.shift();
+
+  let serialized = JSON.stringify(submissions, null, 2);
+  while (
+    Buffer.byteLength(serialized, "utf-8") > MAX_FILE_BYTES &&
+    submissions.length > 1
+  ) {
+    submissions.shift();
+    serialized = JSON.stringify(submissions, null, 2);
+  }
+
+  await writeFile(dataFile, serialized, "utf-8");
 
   return submission;
 }
 
-function readRequestBody(req) {
+const MAX_BODY_BYTES = 20 * 1024;
+
+class BodyTooLargeError extends Error {}
+
+function readRequestBody(req, maxBytes) {
   return new Promise((resolve, reject) => {
     const chunks = [];
-    req.on("data", (chunk) => chunks.push(chunk));
+    let total = 0;
+    req.on("data", (chunk) => {
+      total += chunk.length;
+      if (total > maxBytes) {
+        req.destroy();
+        reject(new BodyTooLargeError());
+        return;
+      }
+      chunks.push(chunk);
+    });
     req.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
     req.on("error", reject);
   });
 }
 
+const RATE_LIMIT = { windowMs: 10 * 60 * 1000, max: 5 };
+
 const port = Number(process.env.PORT) || 8090;
 
 const server = createServer(async (req, res) => {
+  if (handlePreflight(req, res)) return;
+
   if (req.url !== "/api/formular" || req.method !== "POST") {
+    applyCorsHeaders(res);
     res.statusCode = 404;
     res.setHeader("content-type", "application/json");
     res.end(JSON.stringify({ ok: false }));
     return;
   }
 
+  applyCorsHeaders(res);
+
+  const { limited, retryAfterSeconds } = checkRateLimit(
+    "formular",
+    getClientIp(req),
+    RATE_LIMIT,
+  );
+  if (limited) {
+    res.statusCode = 429;
+    res.setHeader("retry-after", String(retryAfterSeconds));
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ ok: false, error: "too many requests" }));
+    return;
+  }
+
   try {
-    const raw = await readRequestBody(req);
+    const raw = await readRequestBody(req, MAX_BODY_BYTES);
     const body = JSON.parse(raw);
     await saveFormularSubmission(body);
 
     res.statusCode = 200;
     res.setHeader("content-type", "application/json");
     res.end(JSON.stringify({ ok: true, saved: true }));
-  } catch {
-    res.statusCode = 400;
+  } catch (err) {
+    res.statusCode = err instanceof BodyTooLargeError ? 413 : 400;
     res.setHeader("content-type", "application/json");
     res.end(JSON.stringify({ ok: false, saved: false }));
   }
