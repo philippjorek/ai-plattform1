@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Service-mit-Herz Architecture</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg: #f3f4fa;
+    --surface: #ffffff;
+    --surface-2: #e7e9f6;
+    --border: #d5d9ee;
+    --text: #14172a;
+    --text-2: #454a6b;
+    --muted: #767aa0;
+    --accent: #4338ca;
+    --accent-soft: #eceeff;
+    --accent-2: #7c3aed;
+    --accent-2-soft: #f4eeff;
+    --ok: #15803d;
+    --warn: #b45309;
+    --shadow: 0 1px 2px rgba(20, 23, 42, 0.06), 0 8px 24px rgba(20, 23, 42, 0.05);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0a0d1a;
+      --surface: #11142a;
+      --surface-2: #171b38;
+      --border: #272c4e;
+      --text: #e8eaf7;
+      --text-2: #b3b7d9;
+      --muted: #7c81a8;
+      --accent: #8b93f8;
+      --accent-soft: rgba(139, 147, 248, 0.14);
+      --accent-2: #c9a9fb;
+      --accent-2-soft: rgba(201, 169, 251, 0.14);
+      --ok: #4ade80;
+      --warn: #fbbf24;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0a0d1a;
+    --surface: #11142a;
+    --surface-2: #171b38;
+    --border: #272c4e;
+    --text: #e8eaf7;
+    --text-2: #b3b7d9;
+    --muted: #7c81a8;
+    --accent: #8b93f8;
+    --accent-soft: rgba(139, 147, 248, 0.14);
+    --accent-2: #c9a9fb;
+    --accent-2-soft: rgba(201, 169, 251, 0.14);
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.6;
+  }
+
+  .mono {
+    font-family: ui-monospace, "JetBrains Mono", "SF Mono", "Cascadia Code", Consolas, monospace;
+  }
+
+  .page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 72px 24px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+  }
+
+  header.hero {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  h1 {
+    margin: 0;
+    font-family: ui-monospace, "JetBrains Mono", "SF Mono", "Cascadia Code", Consolas, monospace;
+    font-size: clamp(32px, 5vw, 44px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .subtitle {
+    margin: 0;
+    max-width: 62ch;
+    color: var(--text-2);
+    font-size: 19px;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .chip {
+    font-size: 12.5px;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--surface);
+    color: var(--text-2);
+  }
+
+  h2 {
+    font-family: ui-monospace, "JetBrains Mono", "SF Mono", "Cascadia Code", Consolas, monospace;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text);
+    margin: 0 0 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  h2::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  p { margin: 0; color: var(--text-2); }
+  p.lede { color: var(--text); }
+
+  figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .diagram-wrap {
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 8px;
+  }
+
+  svg { display: block; width: 100%; height: auto; min-width: 640px; }
+
+  .box-fill { fill: var(--surface-2); }
+  .box-stroke { stroke: var(--border); }
+  .box-text { fill: var(--text); }
+  .box-sub { fill: var(--muted); }
+  .lane-label { fill: var(--muted); }
+  .edge { stroke: var(--text-2); fill: none; }
+  .edge-label { fill: var(--text-2); }
+  .accent-fill { fill: var(--accent-soft); }
+  .accent-stroke { stroke: var(--accent); }
+  .accent-text { fill: var(--accent); }
+  .ext-stroke { stroke: var(--muted); stroke-dasharray: 5 4; }
+  .step-circle { fill: var(--accent); }
+  .step-num { fill: var(--surface); font-weight: 700; }
+
+  figcaption {
+    font-size: 14.5px;
+    color: var(--muted);
+    max-width: 68ch;
+  }
+
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .swatch { width: 18px; height: 0; border-top: 2px solid var(--text-2); display: inline-block; }
+  .legend .swatch.dashed { border-top: 2px dashed var(--muted); }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; background: var(--surface); }
+  th, td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--border); font-size: 15px; vertical-align: top; }
+  th { font-family: ui-monospace, monospace; font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: var(--surface-2); }
+  tr:last-child td { border-bottom: none; }
+  td.mono, th .mono { font-size: 14px; }
+  td code, .inline-code {
+    font-family: ui-monospace, monospace;
+    font-size: 13.5px;
+    background: var(--surface-2);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--text);
+  }
+
+  .gaps { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); }
+  .gap-item { display: flex; gap: 14px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .gap-item:last-child { border-bottom: none; }
+  .gap-mark { flex: none; width: 8px; height: 8px; border-radius: 2px; background: var(--accent-2); margin-top: 8px; }
+  .gap-body b { font-weight: 600; color: var(--text); }
+  .gap-body { color: var(--text-2); font-size: 15px; }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+    color: var(--muted);
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  a { color: var(--accent); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    section { animation: rise 0.5s ease both; }
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="eyebrow">System architecture</div>
+    <h1>Service-mit-Herz</h1>
+    <p class="subtitle">
+      A client-side React SPA backed by two small standalone Node APIs, all three
+      processes running inside one long-lived Docker container — not the
+      Cloudflare/SSR shape the stack suggests.
+    </p>
+    <div class="chips">
+      <span class="chip mono">Vite · React 19 · TanStack Router</span>
+      <span class="chip mono">Tailwind v4 · shadcn/ui</span>
+      <span class="chip mono">node:http · no framework</span>
+      <span class="chip mono">Docker · GitHub Actions (self-hosted)</span>
+    </div>
+  </header>
+
+  <section>
+    <h2>Request flow</h2>
+    <p class="lede">
+      There is no server-side rendering in production. The browser fetches a
+      static SPA bundle and talks to two sibling Node processes directly over
+      <code class="inline-code">fetch</code> for the two stateful features —
+      the contact form and the chat widget.
+    </p>
+
+    <figure>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 980 420" role="img" aria-label="Request flow: the browser talks to an nginx reverse proxy, which routes to three processes inside one Docker container — a static web server on port 8082, formular-server.mjs on port 8090 writing to a JSON volume, and chat-server.mjs on port 8091 writing to the same volume and proxying to an external Open WebUI instance over plain HTTP.">
+          <defs>
+            <marker id="arrow1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="currentColor" class="edge-label" />
+            </marker>
+          </defs>
+
+          <!-- Browser -->
+          <rect x="16" y="176" width="120" height="64" rx="8" class="box-fill box-stroke" stroke-width="1.2" />
+          <text x="76" y="204" text-anchor="middle" class="box-text mono" font-size="13" font-weight="600">Browser</text>
+          <text x="76" y="222" text-anchor="middle" class="box-sub" font-size="11">client SPA</text>
+
+          <!-- nginx -->
+          <rect x="196" y="176" width="140" height="64" rx="8" class="box-fill ext-stroke" stroke-width="1.2" />
+          <text x="266" y="200" text-anchor="middle" class="box-text mono" font-size="12.5" font-weight="600">nginx</text>
+          <text x="266" y="216" text-anchor="middle" class="box-sub" font-size="10.5">reverse proxy</text>
+          <text x="266" y="230" text-anchor="middle" class="box-sub" font-size="10.5">outside this repo</text>
+
+          <!-- browser -> nginx -->
+          <line x1="136" y1="208" x2="192" y2="208" class="edge" stroke-width="1.3" marker-end="url(#arrow1)" />
+
+          <!-- Docker container boundary -->
+          <rect x="378" y="30" width="260" height="360" rx="10" fill="none" class="ext-stroke" stroke-width="1.2" />
+          <text x="508" y="52" text-anchor="middle" class="box-sub mono" font-size="11" letter-spacing="0.04em">DOCKER · aiplattform2deploy</text>
+
+          <!-- web -->
+          <rect x="400" y="76" width="216" height="58" rx="7" class="accent-fill accent-stroke" stroke-width="1.2" />
+          <text x="508" y="99" text-anchor="middle" class="accent-text mono" font-size="12.5" font-weight="600">web preview · :8082</text>
+          <text x="508" y="115" text-anchor="middle" class="box-sub" font-size="10.5">serves the built static bundle</text>
+
+          <!-- formular -->
+          <rect x="400" y="166" width="216" height="58" rx="7" class="box-fill box-stroke" stroke-width="1.2" />
+          <text x="508" y="189" text-anchor="middle" class="box-text mono" font-size="12.5" font-weight="600">formular-server.mjs · :8090</text>
+          <text x="508" y="205" text-anchor="middle" class="box-sub" font-size="10.5">contact-form submissions</text>
+
+          <!-- chat -->
+          <rect x="400" y="256" width="216" height="58" rx="7" class="box-fill box-stroke" stroke-width="1.2" />
+          <text x="508" y="279" text-anchor="middle" class="box-text mono" font-size="12.5" font-weight="600">chat-server.mjs · :8091</text>
+          <text x="508" y="295" text-anchor="middle" class="box-sub" font-size="10.5">chat + feedback</text>
+
+          <!-- entrypoint note -->
+          <text x="508" y="368" text-anchor="middle" class="box-sub" font-size="10">one process dies → whole container exits → Docker restarts it</text>
+
+          <!-- nginx -> web/formular/chat fan out -->
+          <path d="M336,196 C365,196 370,105 400,105" class="edge" stroke-width="1.2" marker-end="url(#arrow1)" />
+          <text x="352" y="150" class="edge-label" font-size="10">GET /*</text>
+
+          <path d="M336,208 C365,208 372,195 400,195" class="edge" stroke-width="1.2" marker-end="url(#arrow1)" />
+          <text x="340" y="245" class="edge-label mono" font-size="10">POST /api/formular</text>
+
+          <path d="M336,220 C368,220 372,285 400,285" class="edge" stroke-width="1.2" marker-end="url(#arrow1)" />
+          <text x="336" y="345" class="edge-label mono" font-size="10">POST /api/chat(-feedback)</text>
+
+          <!-- data volume -->
+          <rect x="704" y="130" width="200" height="76" rx="8" class="box-fill box-stroke" stroke-width="1.2" />
+          <text x="804" y="153" text-anchor="middle" class="box-text mono" font-size="12.5" font-weight="600">data/ volume</text>
+          <text x="804" y="169" text-anchor="middle" class="box-sub" font-size="10">formular-submissions.json</text>
+          <text x="804" y="183" text-anchor="middle" class="box-sub" font-size="10">chat-feedback.json</text>
+          <text x="804" y="197" text-anchor="middle" class="box-sub" font-size="10">named volume, symlinked in</text>
+
+          <!-- formular -> data -->
+          <path d="M616,188 C660,188 665,166 700,166" class="edge" stroke-width="1.2" marker-end="url(#arrow1)" />
+          <text x="632" y="150" class="edge-label" font-size="10">writes</text>
+
+          <!-- chat -> data -->
+          <path d="M616,270 C665,270 668,190 700,190" class="edge" stroke-width="1.2" marker-end="url(#arrow1)" />
+
+          <!-- Open WebUI -->
+          <rect x="704" y="256" width="200" height="70" rx="8" class="box-fill ext-stroke" stroke-width="1.2" />
+          <text x="804" y="279" text-anchor="middle" class="box-text mono" font-size="12.5" font-weight="600">Open WebUI</text>
+          <text x="804" y="295" text-anchor="middle" class="box-sub" font-size="10">OpenAI-compatible /chat/completions</text>
+          <text x="804" y="309" text-anchor="middle" class="box-sub" font-size="10" fill="var(--warn)">plain HTTP, not HTTPS</text>
+
+          <!-- chat -> open webui -->
+          <path d="M616,296 C655,296 665,291 700,291" class="edge" stroke-width="1.2" marker-end="url(#arrow1)" />
+          <text x="632" y="330" class="edge-label" font-size="10">proxies</text>
+        </svg>
+      </div>
+      <div class="legend">
+        <span><span class="swatch"></span> runs in this repo's container</span>
+        <span><span class="swatch dashed"></span> external / outside this repo</span>
+      </div>
+      <figcaption>
+        One reverse proxy in front, one container behind it running three
+        independent Node processes side by side — a static file server and
+        two small API servers, both writing to flat JSON files on a
+        persistent volume.
+      </figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Two implementations, one API surface</h2>
+    <p class="lede">
+      Each of the three POST endpoints exists twice — once as a Vite dev-server
+      middleware plugin, once as a standalone <code class="inline-code">node:http</code>
+      process for production — sharing validation and persistence logic from
+      <code class="inline-code">src/lib/*-store.ts</code>.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Endpoint</th><th>Dev / preview</th><th>Production</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono"><code class="inline-code">POST /api/formular</code></td>
+            <td><code class="inline-code">formularApiPlugin</code> in <code class="inline-code">vite.config.ts</code></td>
+            <td><code class="inline-code">server/formular-server.mjs</code> · :8090</td>
+          </tr>
+          <tr>
+            <td class="mono"><code class="inline-code">POST /api/chat</code></td>
+            <td><code class="inline-code">chatApiPlugin</code> in <code class="inline-code">vite.config.ts</code></td>
+            <td><code class="inline-code">server/chat-server.mjs</code> · :8091</td>
+          </tr>
+          <tr>
+            <td class="mono"><code class="inline-code">POST /api/chat-feedback</code></td>
+            <td><code class="inline-code">chatFeedbackApiPlugin</code> in <code class="inline-code">vite.config.ts</code></td>
+            <td><code class="inline-code">server/chat-server.mjs</code> · :8091</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      The Vite plugins only run under <code class="inline-code">vite dev</code> /
+      <code class="inline-code">vite preview</code> — there is no production server
+      wired into a Nitro/Vite build; the <code class="inline-code">nitro</code> plugin
+      import in <code class="inline-code">vite.config.ts</code> is commented out.
+    </p>
+  </section>
+
+  <section>
+    <h2>Deploy pipeline</h2>
+    <p class="lede">
+      Every push to <code class="inline-code">main</code> fires two independent
+      workflows. One only validates; the other actually redeploys, ending in a
+      <code class="inline-code">docker restart</code> that re-runs the same
+      entrypoint shown above.
+    </p>
+    <figure>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 980 340" role="img" aria-label="Deploy pipeline: a push to main triggers ci.yml, which only validates via lint, typecheck, test and build with no deploy step, and independently triggers deploy.yml, which runs test, then build, then a self-hosted runner execs into the running container to git pull, npm ci, and npm run build, then restarts the container so its entrypoint script relaunches the three processes.">
+          <defs>
+            <marker id="arrow2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="currentColor" class="edge-label" />
+            </marker>
+          </defs>
+
+          <!-- push -->
+          <circle cx="40" cy="220" r="11" class="step-circle" />
+          <text x="40" y="224" text-anchor="middle" class="step-num" font-size="11">1</text>
+          <rect x="16" y="196" width="130" height="56" rx="8" class="box-fill box-stroke" stroke-width="1.2" />
+          <text x="81" y="220" text-anchor="middle" class="box-text mono" font-size="12" font-weight="600">git push</text>
+          <text x="81" y="236" text-anchor="middle" class="box-sub mono" font-size="10.5">main</text>
+
+          <!-- to ci.yml -->
+          <path d="M146,208 C185,208 185,90 220,90" class="edge" stroke-width="1.2" marker-end="url(#arrow2)" />
+          <rect x="220" y="60" width="250" height="60" rx="8" class="box-fill ext-stroke" stroke-width="1.2" />
+          <text x="345" y="84" text-anchor="middle" class="box-text mono" font-size="12" font-weight="600">ci.yml</text>
+          <text x="345" y="100" text-anchor="middle" class="box-sub" font-size="10">lint · typecheck · test · build</text>
+          <text x="345" y="113" text-anchor="middle" class="box-sub" font-size="9.5">Node 20 &amp; 22 — validation only, no deploy</text>
+
+          <!-- to deploy.yml test -->
+          <path d="M146,222 C175,222 178,220 220,220" class="edge" stroke-width="1.2" marker-end="url(#arrow2)" />
+
+          <circle cx="245" cy="196" r="10" class="step-circle" />
+          <text x="245" y="200" text-anchor="middle" class="step-num" font-size="10.5">2</text>
+          <rect x="220" y="202" width="100" height="52" rx="7" class="box-fill box-stroke" stroke-width="1.2" />
+          <text x="270" y="224" text-anchor="middle" class="box-text mono" font-size="11.5" font-weight="600">test</text>
+          <text x="270" y="238" text-anchor="middle" class="box-sub" font-size="9.5">npm test</text>
+
+          <path d="M320,228 C332,228 332,228 344,228" class="edge" stroke-width="1.2" marker-end="url(#arrow2)" />
+
+          <circle cx="369" cy="196" r="10" class="step-circle" />
+          <text x="369" y="200" text-anchor="middle" class="step-num" font-size="10.5">3</text>
+          <rect x="344" y="202" width="100" height="52" rx="7" class="box-fill box-stroke" stroke-width="1.2" />
+          <text x="394" y="224" text-anchor="middle" class="box-text mono" font-size="11.5" font-weight="600">build</text>
+          <text x="394" y="238" text-anchor="middle" class="box-sub" font-size="9.5">npm run build</text>
+
+          <path d="M444,228 C458,228 460,228 474,228" class="edge" stroke-width="1.2" marker-end="url(#arrow2)" />
+
+          <circle cx="500" cy="196" r="10" class="step-circle" />
+          <text x="500" y="200" text-anchor="middle" class="step-num" font-size="10.5">4</text>
+          <rect x="474" y="202" width="200" height="52" rx="7" class="accent-fill accent-stroke" stroke-width="1.2" />
+          <text x="574" y="220" text-anchor="middle" class="accent-text mono" font-size="11.5" font-weight="600">deploy · self-hosted runner</text>
+          <text x="574" y="236" text-anchor="middle" class="box-sub" font-size="9.5">docker exec: git pull · npm ci · build</text>
+          <text x="574" y="248" text-anchor="middle" class="box-sub" font-size="9">environment: production (manual gate, optional)</text>
+
+          <path d="M674,228 C688,228 690,228 704,228" class="edge" stroke-width="1.2" marker-end="url(#arrow2)" />
+
+          <circle cx="730" cy="196" r="10" class="step-circle" />
+          <text x="730" y="200" text-anchor="middle" class="step-num" font-size="10.5">5</text>
+          <rect x="704" y="202" width="130" height="52" rx="7" class="box-fill box-stroke" stroke-width="1.2" />
+          <text x="769" y="224" text-anchor="middle" class="box-text mono" font-size="11.5" font-weight="600">docker restart</text>
+          <text x="769" y="238" text-anchor="middle" class="box-sub" font-size="9.5">aiplattform2deploy</text>
+
+          <path d="M769,254 C769,270 769,270 769,284" class="edge" stroke-width="1.2" marker-end="url(#arrow2)" />
+
+          <circle cx="769" cy="288" r="10" class="step-circle" />
+          <text x="769" y="292" text-anchor="middle" class="step-num" font-size="10.5">6</text>
+          <rect x="644" y="294" width="250" height="40" rx="7" class="box-fill box-stroke" stroke-width="1.2" />
+          <text x="769" y="318" text-anchor="middle" class="box-text mono" font-size="11" font-weight="600">entrypoint reruns → 3 processes relaunch</text>
+        </svg>
+      </div>
+      <figcaption>
+        <code class="inline-code">ci.yml</code> and <code class="inline-code">deploy.yml</code>
+        both listen for the same push and run independently — a red
+        <code class="inline-code">ci.yml</code> does not block
+        <code class="inline-code">deploy.yml</code>, they simply race.
+      </figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Known gaps</h2>
+    <p class="lede">Documented inconsistencies worth knowing about before touching this area — none are incidents, all are pre-existing.</p>
+    <div class="gaps">
+      <div class="gap-item">
+        <div class="gap-mark"></div>
+        <div class="gap-body"><b>SSR scaffolding is dormant.</b> <code class="inline-code">src/start.ts</code>, <code class="inline-code">src/server.ts</code> and the Cloudflare Worker-shaped error recovery exist fully wired to each other, but the <code class="inline-code">TanStackStartVite</code> and <code class="inline-code">nitro</code> Vite plugins are commented out — despite <code class="inline-code">CLAUDE.md</code> stating the app deploys to Cloudflare via Nitro/Wrangler, there is no <code class="inline-code">wrangler.toml</code> anywhere in the repo.</div>
+      </div>
+      <div class="gap-item">
+        <div class="gap-mark"></div>
+        <div class="gap-body"><b>Duplicate router construction.</b> Both <code class="inline-code">main.tsx</code> and <code class="inline-code">router.tsx</code> build their own <code class="inline-code">QueryClient</code>/router; only <code class="inline-code">main.tsx</code> (loaded from <code class="inline-code">index.html</code>) is actually used.</div>
+      </div>
+      <div class="gap-item">
+        <div class="gap-mark"></div>
+        <div class="gap-body"><b>Stale <code class="inline-code">REPO_URL</code>.</b> The <code class="inline-code">Dockerfile</code> default still points at the old <code class="inline-code">ai-plattform1</code> repo name — harmless only because the entrypoint skips cloning whenever <code class="inline-code">$APP_DIR/.git</code> already exists.</div>
+      </div>
+      <div class="gap-item">
+        <div class="gap-mark"></div>
+        <div class="gap-body"><b>Unlinked legacy routes.</b> <code class="inline-code">ind2.tsx</code> and <code class="inline-code">test.tsx</code> remain in <code class="inline-code">src/routes/</code>, reachable by URL but not linked from <code class="inline-code">SiteNav</code>.</div>
+      </div>
+      <div class="gap-item">
+        <div class="gap-mark"></div>
+        <div class="gap-body"><b>No file locking on the JSON stores.</b> Both stores read-modify-write flat JSON files with no lock; concurrent writes race. Mitigated, not fixed, by the per-IP rate limits on both endpoints.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Source: <code class="inline-code">docs/architecture/architecture.md</code>, cross-checked against <code class="inline-code">server/</code>, <code class="inline-code">vite.config.ts</code>, <code class="inline-code">Dockerfile</code>, <code class="inline-code">docker-entrypoint.sh</code>, <code class="inline-code">.github/workflows/</code>.</span>
+    <span>2026-08-12</span>
+  </footer>
+
+</div>
+</body>
+</html>
