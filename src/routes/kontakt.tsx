@@ -1,10 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import heroImage from "@/assets/hero-contact.jpg";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ParallaxHero } from "@/components/ParallaxHero";
 import { Reveal } from "@/components/Reveal";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/kontakt")({
   head: () => ({
@@ -36,6 +37,7 @@ function ContactPage() {
   const [saved, setSaved] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(false);
+  const [datenschutz, setDatenschutz] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -135,6 +137,33 @@ function ContactPage() {
                   className="mt-2 w-full bg-transparent border-0 border-b border-border focus:border-primary outline-none py-3 text-foreground placeholder:text-muted-foreground transition-colors resize-none"
                   placeholder="Erzähl mir kurz von deinem Vorhaben..."
                 />
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="datenschutz"
+                  name="datenschutz"
+                  required
+                  checked={datenschutz}
+                  onCheckedChange={(checked) =>
+                    setDatenschutz(checked === true)
+                  }
+                  className="mt-0.5"
+                />
+                <label
+                  htmlFor="datenschutz"
+                  className="text-sm text-foreground/80 cursor-pointer"
+                >
+                  Ja, ich akzeptiere die{" "}
+                  <Link
+                    to="/datenschutz"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline hover:text-primary/80 transition-colors"
+                  >
+                    Datenschutzbestimmungen
+                  </Link>
+                </label>
               </div>
 
               {sent && (

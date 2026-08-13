@@ -115,7 +115,7 @@ function HomePage() {
               Lass uns etwas bauen, das <span className="text-gradient">denkt</span>.
             </h2>
             <p className="mt-6 text-lg text-muted-foreground max-w-xl mx-auto">
-              Von Discovery bis Deployment — ich begleite dein KI-Vorhaben mit klarem Blick.
+              Von Requirements bis Deployment — ich begleite dein KI-Vorhaben mit klarem Blick.
             </p>
             <div className="mt-10 flex flex-wrap gap-4 justify-center">
               <Link

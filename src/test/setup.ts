@@ -17,3 +17,15 @@ class IntersectionObserverStub implements IntersectionObserver {
 }
 
 vi.stubGlobal("IntersectionObserver", IntersectionObserverStub);
+
+// jsdom has no ResizeObserver implementation; Radix UI primitives (e.g. the
+// Checkbox used on /kontakt) rely on it existing (as it does in every real
+// browser), so stub a no-op version rather than have pages using them crash
+// into the root error boundary in tests.
+class ResizeObserverStub implements ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+vi.stubGlobal("ResizeObserver", ResizeObserverStub);

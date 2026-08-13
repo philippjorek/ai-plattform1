@@ -29,8 +29,9 @@ function getSubmitButton() {
 // The "Unternehmen" (company) field is required in the UI (Field
 // hardcodes `required`) even though it's optional in the backend zod
 // schema — a pre-existing inconsistency, not something introduced here.
-// All four fields must be filled for the native HTML5 validation jsdom
-// enforces on submit to let the submit handler run at all.
+// All four text fields plus the Datenschutz checkbox must be filled/checked
+// for the native HTML5 validation jsdom enforces on submit to let the
+// submit handler run at all.
 async function fillRequiredFields(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText("Name"), "Ada Lovelace");
   await user.type(screen.getByLabelText("Email"), "ada@example.com");
@@ -39,6 +40,7 @@ async function fillRequiredFields(user: ReturnType<typeof userEvent.setup>) {
     screen.getByLabelText("Worum geht's?"),
     "Ich hätte Interesse an einem Projekt.",
   );
+  await user.click(screen.getByRole("checkbox", { name: /datenschutz/i }));
 }
 
 describe("kontakt.tsx submission flow", () => {
