@@ -72,3 +72,16 @@ Tailwind v4 with CSS-based theming in `src/styles.css` (`@theme inline` + `:root
 ### Path aliases
 
 `@/*` maps to `src/*` — configured in `tsconfig.json` (for type-checking), mirrored in `components.json` (for shadcn generation), and set explicitly as a `resolve.alias` in `vite.config.ts` (needed for actual runtime/dev-server resolution — don't remove it).
+
+## Execution scope
+
+Only write and execute code inside the `ai-plattform2` Docker container, and only within the project folder `/home/www/20260709/ai-plattform2`.
+
+## Stop conditions
+
+Stop and check in with the user instead of continuing on your own when any of these happen:
+
+- **Wrong test command** — the command you're about to run doesn't match one of the scripts listed in `## Commands` above.
+- **Missing package** — a dependency required for the task isn't installed and would need adding.
+- **Unexpected error** — an error occurs that isn't an expected/normal part of the task.
+- **Too many tokens** — the task has consumed more than 100,000 tokens.
