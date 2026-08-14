@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
+import { vectordatabasetest } from "./vector-store";
 
 export const formularSubmissionSchema = z.object({
   name: z.string().min(1).max(200),
@@ -56,6 +57,11 @@ export async function saveFormularSubmission(
   }
 
   await writeFile(dataFile, serialized, "utf-8");
+
+  // Additionally mirror into the "Vectoraiplattform" vector index. Best
+  // effort: vectordatabasetest() swallows its own errors, so a missing/down
+  // vector backend never breaks the JSON-backed Kontakt submission flow.
+  await vectordatabasetest(submission);
 
   return submission;
 }

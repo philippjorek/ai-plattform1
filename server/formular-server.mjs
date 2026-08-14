@@ -11,11 +11,77 @@
 // front of this (e.g. nginx) needs to reverse-proxy POST /api/formular to it.
 
 import { createServer } from "node:http";
+import { fileURLToPath } from "node:url";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
+import { Index } from "@upstash/vector";
 import { applyCorsHeaders, handlePreflight } from "./cors.mjs";
 import { checkRateLimit, getClientIp } from "./rate-limit.mjs";
+
+// Resolved relative to this file, not process.cwd() — mirrors
+// server/vector-server.mjs's rationale. Needed now that this server also
+// talks to the vector backend and requires its credentials.
+const envLocalPath = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  ".env.local",
+);
+try {
+  process.loadEnvFile(envLocalPath);
+} catch {
+  // no .env.local file present — fine if env vars are set another way
+}
+
+// Mirrors src/lib/vector-store.ts's vectordatabasetest() — this is the
+// plain-Node production server, so it can't import the Vite-only TS module
+// and duplicates it here, same as server/vector-server.mjs duplicates its
+// own env/index setup instead of sharing with the dev plugin.
+const VECTOR_NAMESPACE = "kontakt";
+
+function readVectorEnv() {
+  const url = process.env.aiplattform2_UPSTASH_VECTOR_REST_URL;
+  const token = process.env.aiplattform2_UPSTASH_VECTOR_REST_TOKEN;
+  if (!url || !token) return null;
+  return { url, token };
+}
+
+let cachedVectorIndex = null;
+function getVectorIndex(env) {
+  if (!cachedVectorIndex) {
+    cachedVectorIndex = new Index({ url: env.url, token: env.token });
+  }
+  return cachedVectorIndex;
+}
+
+// Best-effort mirror of the JSON write into the "Vectoraiplattform" vector
+// index — additive, not a replacement. Swallows its own errors so a
+// missing/down vector backend never breaks the Kontakt form response.
+async function vectordatabasetest(submission) {
+  const env = readVectorEnv();
+  if (!env) return false;
+
+  const id = `formular-${submission.submittedAt}`;
+  const data = [
+    submission.name,
+    submission.company,
+    submission.email,
+    submission.message,
+  ]
+    .filter(Boolean)
+    .join(" — ");
+
+  try {
+    const index = getVectorIndex(env);
+    await index.upsert(
+      { id, data, metadata: { ...submission } },
+      { namespace: VECTOR_NAMESPACE },
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const formularSubmissionSchema = z.object({
   name: z.string().min(1).max(200),
@@ -61,6 +127,11 @@ async function saveFormularSubmission(input) {
   }
 
   await writeFile(dataFile, serialized, "utf-8");
+
+  // Additionally mirror into the "Vectoraiplattform" vector index. Best
+  // effort: vectordatabasetest() swallows its own errors, so a missing/down
+  // vector backend never breaks the JSON-backed Kontakt submission flow.
+  await vectordatabasetest(submission);
 
   return submission;
 }
