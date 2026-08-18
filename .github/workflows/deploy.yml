@@ -43,8 +43,10 @@ jobs:
 # updates the code *inside* the already-running "aiplattform2deploy" container
 # (git pull + npm ci + npm run build via `docker exec`), then restarts that
 # same container so its startup command (docker-entrypoint.sh) relaunches the
-# app's three processes: web preview on port 8082, the formular API on port
-# 8090, and the chat API on port 8091. The container itself is
+# app's four processes: web preview on port 8082, the formular API on port
+# 8090, the chat API on port 8091, and the vector API on port 8092. The API
+# processes import their routes from src/api/*.ts and run that TypeScript
+# directly, so the container's Node must be >= 22.18. The container itself is
 # provisioned/maintained outside this pipeline — see DEPLOYMENT.md for
 # one-time setup.
 

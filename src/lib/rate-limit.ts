@@ -1,8 +1,7 @@
-// In-memory per-IP sliding-window rate limiter for the /api/formular,
-// /api/chat and /api/chat-feedback endpoints. No external dependency (Redis
-// etc.) since this is a small single-instance site — see
-// server/rate-limit.mjs for the logic-identical twin used by the
-// standalone production servers, which can't import this TS file directly.
+// In-memory per-IP sliding-window rate limiter for the API endpoints. No
+// external dependency (Redis etc.) since this is a small single-instance
+// site. Counters live per process, so the Vite dev server and each
+// standalone server in server/ limit independently.
 
 export type RateLimitOptions = { windowMs: number; max: number };
 export type RateLimitResult = { limited: boolean; retryAfterSeconds?: number };

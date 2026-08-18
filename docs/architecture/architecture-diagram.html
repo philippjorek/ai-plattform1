@@ -378,26 +378,39 @@
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Endpoint</th><th>Dev / preview</th><th>Production</th></tr>
+          <tr><th>Endpoint</th><th>Route definition (shared)</th><th>Production</th></tr>
         </thead>
         <tbody>
           <tr>
             <td class="mono"><code class="inline-code">POST /api/formular</code></td>
-            <td><code class="inline-code">formularApiPlugin</code> in <code class="inline-code">vite.config.ts</code></td>
+            <td><code class="inline-code">src/api/formular.ts</code></td>
             <td><code class="inline-code">server/formular-server.mjs</code> · :8090</td>
           </tr>
           <tr>
             <td class="mono"><code class="inline-code">POST /api/chat</code></td>
-            <td><code class="inline-code">chatApiPlugin</code> in <code class="inline-code">vite.config.ts</code></td>
+            <td><code class="inline-code">src/api/chat.ts</code></td>
             <td><code class="inline-code">server/chat-server.mjs</code> · :8091</td>
           </tr>
           <tr>
             <td class="mono"><code class="inline-code">POST /api/chat-feedback</code></td>
-            <td><code class="inline-code">chatFeedbackApiPlugin</code> in <code class="inline-code">vite.config.ts</code></td>
+            <td><code class="inline-code">src/api/chat-feedback.ts</code></td>
             <td><code class="inline-code">server/chat-server.mjs</code> · :8091</td>
+          </tr>
+          <tr>
+            <td class="mono"><code class="inline-code">GET /api/vector/all</code></td>
+            <td><code class="inline-code">src/api/vector.ts</code></td>
+            <td><code class="inline-code">server/vector-server.mjs</code> · :8092</td>
+          </tr>
+          <tr>
+            <td class="mono"><code class="inline-code">GET /api/vector?id=</code></td>
+            <td><code class="inline-code">src/api/vector-fetch.ts</code></td>
+            <td><code class="inline-code">server/vector-server.mjs</code> · :8092</td>
           </tr>
         </tbody>
       </table>
+      <p class="lede">Dev and preview serve the same table via
+        <code class="inline-code">devApiPlugin(apiRoutes)</code>
+        (<code class="inline-code">src/api/vite-plugin.ts</code>).</p>
     </div>
     <p>
       The Vite plugins only run under <code class="inline-code">vite dev</code> /

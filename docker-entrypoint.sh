@@ -29,8 +29,8 @@ ln -s /data "$APP_DIR/data"
 
 # Secrets (OPEN_WEBUI_*, aiplattform2_UPSTASH_VECTOR_* etc.) are never baked
 # into the image or the git repo. They're mounted read-only from the host at
-# /run/secrets/app.env. vector-server.mjs specifically loads .env.local (per
-# its own convention), so the same secrets file is copied to both names.
+# /run/secrets/app.env. The API servers load both .env and .env.local (see
+# src/api/env.ts), so the same secrets file is copied to both names.
 if [ -f /run/secrets/app.env ]; then
   cp /run/secrets/app.env "$APP_DIR/.env"
   cp /run/secrets/app.env "$APP_DIR/.env.local"

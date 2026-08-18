@@ -1,10 +1,16 @@
 import { Index } from "@upstash/vector";
-import type { FormularSubmission } from "./formular-store";
+import type { FormularSubmission } from "./formular-store.ts";
 
 // Vector indexes have no "create table" step — a namespace is created
 // implicitly on first upsert. This keeps Kontakt submissions logically
 // separated within the single "Vectoraiplattform" index (AIPLATTFOR-5).
 const NAMESPACE = "kontakt";
+
+// Whether the vector backend is configured at all. Lets a route answer 503
+// before spending the caller's rate-limit budget.
+export function isVectorConfigured(): boolean {
+  return readVectorEnv() !== null;
+}
 
 function readVectorEnv() {
   const url = process.env.aiplattform2_UPSTASH_VECTOR_REST_URL;
@@ -91,7 +97,9 @@ export async function listAllVectors(): Promise<VectorListing | null> {
   for (const namespace of namespaces) {
     let cursor: string | number = "";
     do {
-      const page = await index.range(
+      // Annotated because `cursor` is reassigned from `page.nextCursor`,
+      // which makes the inferred type of `page` self-referential (TS7022).
+      const page: Awaited<ReturnType<typeof index.range>> = await index.range(
         {
           cursor,
           limit: RANGE_PAGE_SIZE,
@@ -126,4 +134,17 @@ export async function listAllVectors(): Promise<VectorListing | null> {
     vectors,
     truncated,
   };
+}
+
+// Single-record lookup by id, backing GET /api/vector?id=... Returns null
+// when the vector backend isn't configured, so callers can answer 503;
+// a configured-but-unknown id resolves to { record: null }.
+export async function fetchVector(
+  id: string,
+): Promise<{ record: unknown } | null> {
+  const env = readVectorEnv();
+  if (!env) return null;
+
+  const result = await getIndex(env).fetch([id], { includeData: true });
+  return { record: result[0] ?? null };
 }

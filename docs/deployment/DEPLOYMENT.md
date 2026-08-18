@@ -5,11 +5,17 @@ Docker container** named `aiplattform2deploy` on the Ubuntu server, by
 `.github/workflows/deploy.yml` on every push to `main`. This pipeline does
 **not** build a Docker image or create/destroy the container — it only
 updates the code inside it and restarts it. The container's startup command
-is this repo's `docker-entrypoint.sh` (see `Dockerfile`), which runs three
+is this repo's `docker-entrypoint.sh` (see `Dockerfile`), which runs four
 processes on internal ports **8082** (web, `vite preview`), **8090**
-(formular API, `server/formular-server.mjs`), and **8091** (chat API,
-`server/chat-server.mjs`). After deployment the app is reachable at
+(formular API, `server/formular-server.mjs`), **8091** (chat API,
+`server/chat-server.mjs`), and **8092** (vector API,
+`server/vector-server.mjs`). After deployment the app is reachable at
 **`deploy.service-mit-herz.de`**.
+
+The three API processes import their route definitions from `src/api/*.ts`
+directly — Node executes that TypeScript itself, so they still need no build
+step, but the container's Node must be **>= 22.18** (where type stripping is
+on by default). The `Dockerfile` pins this.
 
 ## How it works
 
@@ -23,8 +29,8 @@ processes on internal ports **8082** (web, `vite preview`), **8090**
    - `npm --prefix /home/www/20260709/ai-plattform2 run build`
 3. It then runs `docker restart aiplattform2deploy`, so `docker-entrypoint.sh`
    re-runs on container start, re-pulling/rebuilding the app and relaunching
-   the three processes with the freshly built code on ports 8082, 8090, and
-   8091.
+   the four processes with the freshly built code on ports 8082, 8090, 8091,
+   and 8092.
 
 The container itself — its existence, image, port mapping, and startup
 command — is **not** managed by this pipeline. It must already be running
@@ -74,14 +80,16 @@ and be running. It needs:
   be pulled from **non-interactively** (no credential prompts) — set up a
   deploy key or stored credential helper for whichever remote (GitLab or
   GitHub) hosts this repo.
-- **Ports 8082, 8090, and 8091 published from the container to the host**
-  (matching the `Dockerfile`'s `EXPOSE`) — e.g. `-p 8082:8082 -p 8090:8090
-  -p 8091:8091` on `docker create`/`docker run`.
+- **Ports 8082, 8090, 8091, and 8092 published from the container to the
+  host** (matching the `Dockerfile`'s `EXPOSE`) — e.g. `-p 8082:8082
+  -p 8090:8090 -p 8091:8091 -p 8092:8092` on `docker create`/`docker run`.
+- **Node >= 22.18 inside the container**, since the standalone API servers
+  run their TypeScript sources directly (native type stripping).
 - **A startup command (entrypoint/CMD) that is `docker-entrypoint.sh`** (or
   functionally equivalent to it) and is re-invoked automatically whenever the
   container restarts — this is what makes `docker restart aiplattform2deploy`
-  pick up the new build and relaunch all three processes (web on 8082,
-  formular API on 8090, chat API on 8091).
+  pick up the new build and relaunch all four processes (web on 8082,
+  formular API on 8090, chat API on 8091, vector API on 8092).
 
 If any of the above isn't true yet, fix it directly on the container/its
 image — this file only documents what the pipeline assumes, it doesn't
@@ -92,12 +100,14 @@ create it.
 After deployment the site is reachable at **`deploy.service-mit-herz.de`**.
 Whatever already terminates TLS/handles that subdomain on this server (e.g.
 an nginx running on the host, outside this container) needs to route, based
-on path, to the three ports published in step 3:
+on path, to the four ports published in step 3:
 
 - `deploy.service-mit-herz.de/` (everything else) → `http://127.0.0.1:8082`
 - `deploy.service-mit-herz.de/api/formular` → `http://127.0.0.1:8090`
 - `deploy.service-mit-herz.de/api/chat` and `/api/chat-feedback` →
   `http://127.0.0.1:8091`
+- `deploy.service-mit-herz.de/api/vector` and `/api/vector/all` →
+  `http://127.0.0.1:8092`
 
 That reverse proxy config (including the DNS record for the subdomain and
 its TLS cert) lives outside this repo and isn't managed by this pipeline.

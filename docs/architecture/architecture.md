@@ -67,17 +67,35 @@ Browser
 
 ## Backend / APIs
 
-There are **two parallel implementations** of the same three endpoints —
-one for dev, one for production — that share their persistence logic via
-`src/lib/*-store.ts` / `src/lib/chat-client.ts`:
+Every endpoint is defined **once**, as an `ApiRoute` in `src/api/`, and
+served two ways from that single table (`src/api/index.ts`):
 
-| Endpoint | Dev/preview (Vite middleware) | Production (standalone process) |
+- **dev/preview** — `devApiPlugin(apiRoutes)` (`src/api/vite-plugin.ts`),
+  registered as a Vite plugin in `vite.config.ts`. Serves every route.
+- **production** — `createApiServer(routes)` (`src/api/node-server.ts`),
+  wrapped by the thin entrypoints in `server/*.mjs`, each of which owns a
+  subset of the table on its own port.
+
+| Endpoint | Route definition | Production process |
 | --- | --- | --- |
-| `POST /api/formular` | `formularApiPlugin` in `vite.config.ts` | `server/formular-server.mjs`, port **8090** |
-| `POST /api/chat` | `chatApiPlugin` in `vite.config.ts` | `server/chat-server.mjs`, port **8091** |
-| `POST /api/chat-feedback` | `chatFeedbackApiPlugin` in `vite.config.ts` | `server/chat-server.mjs`, port **8091** |
+| `POST /api/formular` | `src/api/formular.ts` | `server/formular-server.mjs`, port **8090** |
+| `POST /api/chat` | `src/api/chat.ts` | `server/chat-server.mjs`, port **8091** |
+| `POST /api/chat-feedback` | `src/api/chat-feedback.ts` | `server/chat-server.mjs`, port **8091** |
+| `GET /api/vector/all` | `src/api/vector.ts` | `server/vector-server.mjs`, port **8092** |
+| `GET /api/vector?id=` | `src/api/vector-fetch.ts` | `server/vector-server.mjs`, port **8092** |
 
-- The Vite plugins only run inside `vite dev` / `vite preview` — there is
+Everything common to the endpoints — OPTIONS preflight, CORS headers, per-IP
+rate limiting, bounded body reading, JSON writing, error-to-status mapping —
+lives in `src/api/dispatch.ts` and happens once, for all routes. A route
+only declares what is specific to it: path, method, size and rate limits,
+its handler, and how its errors map to a response.
+
+The only intentional difference between the two ways of serving is the
+fallthrough: the Vite plugin hands an unmatched request back to the
+middleware chain (so the SPA answers it), while a standalone server answers
+`404 {"ok":false}`.
+
+- `devApiPlugin` only runs inside `vite dev` / `vite preview` — there is
   **no production server wired into the Vite/Nitro build** (the `nitro`
   plugin import in `vite.config.ts` is commented out).
 - `src/lib/formular-store.ts` — validates (`zod`) and appends contact-form
@@ -90,11 +108,14 @@ one for dev, one for production — that share their persistence logic via
   `OPEN_WEBUI_URL` / `OPEN_WEBUI_API_KEY` / `OPEN_WEBUI_MODEL` from the
   environment (`.env`, not committed); returns `null` from `readChatEnv()`
   if any are missing, and the caller returns 503.
-- Both production servers are plain `node:http` scripts with no build step,
-  so they run directly via `node server/formular-server.mjs` /
-  `node server/chat-server.mjs`. Whatever fronts the site (nginx, or the
-  container's own process) must reverse-proxy the three POST routes to
-  these ports.
+- The production servers are plain `node:http` processes with **no build
+  step**: they run directly via `node server/formular-server.mjs` etc. Node
+  executes the imported TypeScript itself (native type stripping, which is
+  on by default from **Node 22.18**), which is why every relative import in
+  the `src/api/` → `src/lib/` server graph carries an explicit `.ts`
+  extension — plain Node ESM does not do extensionless resolution.
+- Whatever fronts the site (nginx, or the container's own process) must
+  reverse-proxy the API routes to these ports.
 
 ### SSR scaffolding is present but dormant
 

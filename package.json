@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview  --port 8082",
     "serve:formular-api": "node server/formular-server.mjs",
+    "serve:chat-api": "node server/chat-server.mjs",
     "serve:vector-api": "node server/vector-server.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

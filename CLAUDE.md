@@ -49,6 +49,38 @@ Current top-level pages: `/` (index), `/architecture`, `/projekte`, `/kontakt` (
 
 Pages share a consistent shell: `<SiteNav />` (fixed header, scroll-aware glass effect) + a `<ParallaxHero>` (full-screen scroll-parallax hero built from an image in `src/assets/`) + content sections wrapped in `<Reveal>` (IntersectionObserver-triggered fade/slide-in, toggles the `in` class) + `<SiteFooter />`. When adding a new page, follow this pattern rather than inventing a new page shell.
 
+### HTTP API layer
+
+Every API endpoint is declared **once** as an `ApiRoute` in `src/api/`
+(`formular.ts`, `chat.ts`, `chat-feedback.ts`, `vector.ts`,
+`vector-fetch.ts`), collected in `src/api/index.ts`, and served two ways from
+that one table:
+
+- `src/api/vite-plugin.ts` — `devApiPlugin(apiRoutes)`, registered in
+  `vite.config.ts`, serves everything under `vite dev` / `vite preview`.
+- `src/api/node-server.ts` — `createApiServer(routes)`, wrapped by the thin
+  entrypoints `server/formular-server.mjs` (:8090),
+  `server/chat-server.mjs` (:8091) and `server/vector-server.mjs` (:8092),
+  each owning a subset of the table.
+
+`src/api/dispatch.ts` handles everything common to all routes — preflight,
+CORS, per-IP rate limiting, bounded body reading, JSON writing, mapping a
+thrown error to a status. Add an endpoint by writing a route module and
+adding it to the table, **not** by adding request handling to
+`vite.config.ts` or to a `server/*.mjs` entrypoint.
+
+Two rules keep this working:
+
+- The standalone servers run their TypeScript sources directly via Node's
+  native type stripping (needs **Node >= 22.18**; the `Dockerfile` pins it),
+  so every relative import in the `src/api/` → `src/lib/` server graph needs
+  an explicit **`.ts` extension** — plain Node ESM has no extensionless
+  resolution. Do not use the `@/*` alias in these modules; Node can't resolve
+  it.
+- Read environment variables **inside** functions, not at module top level,
+  so it never matters whether the module graph loads before or after
+  `loadEnvFiles()` (`src/api/env.ts`).
+
 ### Server / SSR error handling
 
 This app has custom SSR error-swallowing recovery, split across three files that only make sense together:

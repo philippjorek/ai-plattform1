@@ -9,6 +9,12 @@ this project. See `docs/architecture/architecture.md` for the actual app;
 this file is tooling documentation, kept here because it came up in project
 work.
 
+The `/auto-mode-setup` command and the user-level `~/.claude/settings.json`
+it writes are documented separately in
+[`docs/skills/auto-mode-setup.md`](auto-mode-setup.md) — that's a built-in
+*command* plus a settings file, not a skill, and the settings file lives
+outside this repo and isn't version controlled.
+
 ## Where they actually live
 
 The three built-in skills don't exist as a readable file in this repo, in
@@ -114,4 +120,5 @@ rather than only surfacing when something's wrong.
 This file documents Claude Code tooling behavior observed while working on
 this project, not application architecture. If Claude Code itself is
 swapped out or its skill set changes, this file will go stale independently
-of anything in `src/` — it's not derived from this app's code.
+of anything in `src/` — it's not derived from this app's code. The same
+caveat applies to [`auto-mode-setup.md`](auto-mode-setup.md) alongside it.
