@@ -53,12 +53,98 @@ function getIndex(env) {
 
 const RATE_LIMIT = { windowMs: 5 * 60 * 1000, max: 30 };
 
+// Mirror of listAllVectors() in src/lib/vector-store.ts — same page size and
+// cap, kept in sync by hand since this server runs without a build step.
+const RANGE_PAGE_SIZE = 100;
+const MAX_VECTORS = 500;
+
+async function listAllVectors(index) {
+  const namespaces = await index.listNamespaces();
+  const vectors = [];
+  let truncated = false;
+
+  for (const namespace of namespaces) {
+    let cursor = "";
+    do {
+      const page = await index.range(
+        {
+          cursor,
+          limit: RANGE_PAGE_SIZE,
+          includeMetadata: true,
+          includeData: true,
+          includeVectors: false,
+        },
+        { namespace },
+      );
+
+      for (const vector of page.vectors) {
+        vectors.push({
+          namespace,
+          id: String(vector.id),
+          data: vector.data,
+          metadata: vector.metadata,
+        });
+      }
+
+      cursor = page.nextCursor;
+    } while (cursor && vectors.length < MAX_VECTORS);
+
+    if (vectors.length >= MAX_VECTORS) {
+      truncated = true;
+      break;
+    }
+  }
+
+  return { namespaces, vectors, truncated };
+}
+
 const port = Number(process.env.PORT) || 8092;
 
 const server = createServer(async (req, res) => {
   if (handlePreflight(req, res)) return;
 
   const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+
+  if (url.pathname === "/api/vector/all" && req.method === "GET") {
+    applyCorsHeaders(res);
+
+    const env = readVectorEnv();
+    if (!env) {
+      res.statusCode = 503;
+      res.setHeader("content-type", "application/json");
+      res.end(
+        JSON.stringify({ ok: false, error: "vector backend not configured" }),
+      );
+      return;
+    }
+
+    const { limited, retryAfterSeconds } = checkRateLimit(
+      "vector-list",
+      getClientIp(req),
+      RATE_LIMIT,
+    );
+    if (limited) {
+      res.statusCode = 429;
+      res.setHeader("retry-after", String(retryAfterSeconds));
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ ok: false, error: "too many requests" }));
+      return;
+    }
+
+    try {
+      const listing = await listAllVectors(getIndex(env));
+      res.statusCode = 200;
+      res.setHeader("content-type", "application/json");
+      res.end(
+        JSON.stringify({ ok: true, endpoint: new URL(env.url).host, ...listing }),
+      );
+    } catch {
+      res.statusCode = 502;
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ ok: false, error: "vector request failed" }));
+    }
+    return;
+  }
 
   if (url.pathname !== "/api/vector" || req.method !== "GET") {
     applyCorsHeaders(res);

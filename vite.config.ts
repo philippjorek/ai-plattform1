@@ -13,6 +13,7 @@ import path from "node:path";
 import { saveFormularSubmission } from "./src/lib/formular-store";
 import { getChatReply, readChatEnv } from "./src/lib/chat-client";
 import { saveChatFeedback } from "./src/lib/chat-feedback-store";
+import { listAllVectors } from "./src/lib/vector-store";
 import { applyCorsHeaders, handlePreflight } from "./src/lib/cors";
 import { checkRateLimit, getClientIp } from "./src/lib/rate-limit";
 
@@ -20,6 +21,15 @@ try {
   process.loadEnvFile();
 } catch {
   // no .env file present — fine in environments where env vars are set another way
+}
+
+// process.loadEnvFile() with no argument only reads ".env", so the Upstash
+// Vector credentials (kept in .env.local, see .env.local.example) need an
+// explicit second load — same rationale as server/vector-server.mjs.
+try {
+  process.loadEnvFile(path.resolve(process.cwd(), ".env.local"));
+} catch {
+  // no .env.local present — fine if those vars are set another way
 }
 
 // Shared by the three dev/preview-only API plugins below, mirroring the
@@ -235,6 +245,70 @@ function chatFeedbackApiPlugin(): Plugin {
   };
 }
 
+// Dev/preview-only API: lists every record in the "Vectoraiplattform" Upstash
+// Vector index for the /test inspector page. Same caveat as the plugins above
+// — only runs under `vite dev` / `vite preview`. For production, see
+// server/vector-server.mjs.
+const VECTOR_LIST_RATE_LIMIT = { windowMs: 5 * 60 * 1000, max: 30 };
+
+function vectorApiPlugin(): Plugin {
+  const handler = async (
+    req: import("node:http").IncomingMessage,
+    res: import("node:http").ServerResponse,
+    next: () => void,
+  ) => {
+    if (handlePreflight(req, res)) return;
+    if (req.url?.split("?")[0] !== "/api/vector/all" || req.method !== "GET") {
+      return next();
+    }
+
+    applyCorsHeaders(res);
+
+    const { limited, retryAfterSeconds } = checkRateLimit(
+      "vector-list",
+      getClientIp(req),
+      VECTOR_LIST_RATE_LIMIT,
+    );
+    if (limited) {
+      res.statusCode = 429;
+      res.setHeader("retry-after", String(retryAfterSeconds));
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ ok: false, error: "too many requests" }));
+      return;
+    }
+
+    try {
+      const listing = await listAllVectors();
+      if (!listing) {
+        res.statusCode = 503;
+        res.setHeader("content-type", "application/json");
+        res.end(
+          JSON.stringify({ ok: false, error: "vector backend not configured" }),
+        );
+        return;
+      }
+
+      res.statusCode = 200;
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ ok: true, ...listing }));
+    } catch {
+      res.statusCode = 502;
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ ok: false, error: "vector request failed" }));
+    }
+  };
+
+  return {
+    name: "vector-api",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => void handler(req, res, next));
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use((req, res, next) => void handler(req, res, next));
+    },
+  };
+}
+
 export default defineConfig({
   base: "/",
   build: {
@@ -266,6 +340,7 @@ export default defineConfig({
     formularApiPlugin(),
     chatApiPlugin(),
     chatFeedbackApiPlugin(),
+    vectorApiPlugin(),
     //    TanStackStartVite({
     TanStackRouterVite(
       // Configure any specific TanStack Start settings here if needed
